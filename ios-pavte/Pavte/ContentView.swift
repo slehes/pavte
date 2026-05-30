@@ -26,33 +26,38 @@ struct ContentView: View {
     }
     
     private var mainAppView: some View {
-        TabView(selection: $selectedTab) {
-            ChatsListView()
-                .tabItem {
-                    Label("Чаты", systemImage: "message.fill")
-                }
-                .tag(0)
+        ZStack {
+            // Global wallpaper background — visible in ALL tabs
+            themeManager.wallpaperView()
+                .ignoresSafeArea()
             
-            ContactsView()
-                .tabItem {
-                    Label("Контакты", systemImage: "person.2.fill")
-                }
-                .tag(1)
-            
-            CallsView()
-                .tabItem {
-                    Label("Звонки", systemImage: "phone.fill")
-                }
-                .tag(2)
-            
-            SettingsView()
-                .tabItem {
-                    Label("Настройки", systemImage: "gearshape.fill")
-                }
-                .tag(3)
+            TabView(selection: $selectedTab) {
+                ChatsListView()
+                    .tabItem {
+                        Label("Чаты", systemImage: "message.fill")
+                    }
+                    .tag(0)
+                
+                ContactsView()
+                    .tabItem {
+                        Label("Контакты", systemImage: "person.2.fill")
+                    }
+                    .tag(1)
+                
+                CallsView()
+                    .tabItem {
+                        Label("Звонки", systemImage: "phone.fill")
+                    }
+                    .tag(2)
+                
+                SettingsView()
+                    .tabItem {
+                        Label("Настройки", systemImage: "gearshape.fill")
+                    }
+                    .tag(3)
+            }
+            .tint(themeManager.accentColor)
         }
-        .tint(themeManager.accentColor)
-        .background(PavteBackground().ignoresSafeArea())
     }
 }
 

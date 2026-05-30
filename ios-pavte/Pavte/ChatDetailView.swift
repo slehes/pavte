@@ -225,9 +225,7 @@ struct ChatDetailView: View {
                         showAttachmentPopup.toggle()
                     }
                 },
-                onVoiceRecordToggle: toggleVoiceRecording,
-                onVoiceCall: { startCall(type: .voice) },
-                onVideoCall: { startCall(type: .video) }
+                onVoiceRecordToggle: toggleVoiceRecording
             )
             .focused($isTextFieldFocused)
         }
@@ -246,30 +244,51 @@ struct ChatDetailView: View {
                 VStack(spacing: 0) {
                     Text(chat.displayName)
                         .font(.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                     if chat.chatType == .personal && themeManager.showOnlineStatus {
                         Text(chat.participant.isOnline ? "в сети" : lastSeenText)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.gray)
                     } else if chat.chatType == .group {
                         Text("\(currentChat.members.count) участников")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.gray)
                     } else if chat.chatType == .channel {
                         Text("\(currentChat.members.count) подписчиков")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.gray)
                     }
                 }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            if !currentChat.pinnedMessages.isEmpty {
+            HStack(spacing: 12) {
+                // Voice call button in nav bar
                 Button {
-                    showPinnedMessages = true
+                    startCall(type: .voice)
                 } label: {
-                    Image(systemName: "pin.fill")
-                        .foregroundStyle(.orange)
+                    Image(systemName: "phone.fill")
+                        .font(.body)
+                        .foregroundStyle(.gray)
+                }
+                
+                // Video call button in nav bar
+                Button {
+                    startCall(type: .video)
+                } label: {
+                    Image(systemName: "video.fill")
+                        .font(.body)
+                        .foregroundStyle(.gray)
+                }
+                
+                // Pinned messages
+                if !currentChat.pinnedMessages.isEmpty {
+                    Button {
+                        showPinnedMessages = true
+                    } label: {
+                        Image(systemName: "pin.fill")
+                            .foregroundStyle(.orange)
+                    }
                 }
             }
         }
@@ -976,8 +995,6 @@ struct MessageInputBar: View {
     let onSend: () -> Void
     let onAttachment: () -> Void
     let onVoiceRecordToggle: () -> Void
-    let onVoiceCall: () -> Void
-    let onVideoCall: () -> Void
     @EnvironmentObject var themeManager: ThemeManager
 
     private var formattedDuration: String {
@@ -986,11 +1003,11 @@ struct MessageInputBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // + button
+            // + button — GRAY color
             Button(action: onAttachment) {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(themeManager.accentColor)
+                    .foregroundStyle(.gray)
             }
 
             if isRecording {
@@ -1009,33 +1026,13 @@ struct MessageInputBar: View {
                     .lineLimit(1...5)
             }
 
-            // Voice / Send
+            // Voice / Send button — GRAY when mic, accent when send
             Button {
                 if isRecording || text.isEmpty { onVoiceRecordToggle() } else { onSend() }
             } label: {
                 Image(systemName: isRecording ? "stop.circle.fill" : (text.isEmpty ? "mic.fill" : "arrow.up.circle.fill"))
                     .font(.title2)
-                    .foregroundStyle(isRecording ? .red : themeManager.accentColor)
-            }
-
-            // Voice call
-            Button(action: onVoiceCall) {
-                Image(systemName: "phone.fill")
-                    .font(.body)
-                    .foregroundStyle(themeManager.accentColor)
-                    .frame(width: 32, height: 32)
-                    .background(themeManager.accentColor.opacity(0.12))
-                    .clipShape(Circle())
-            }
-
-            // Video call
-            Button(action: onVideoCall) {
-                Image(systemName: "video.fill")
-                    .font(.body)
-                    .foregroundStyle(themeManager.accentColor)
-                    .frame(width: 32, height: 32)
-                    .background(themeManager.accentColor.opacity(0.12))
-                    .clipShape(Circle())
+                    .foregroundStyle(isRecording ? .red : (text.isEmpty ? .gray : themeManager.accentColor))
             }
         }
         .padding(.horizontal, 12)
