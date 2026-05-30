@@ -14,15 +14,12 @@ jobs:
       
       - name: Select Xcode
         run: |
-          # Use the latest available Xcode
           XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
             sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
             echo "Selected: $XCODE_PATH"
           fi
           xcodebuild -version
-          echo "=== Available simulators ==="
-          xcrun simctl list devicetypes | grep -i "iPhone" | tail -10
       
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -35,15 +32,11 @@ jobs:
       - name: Build iOS app
         run: |
           cd ios-pavte
-          # Pick the latest available iPhone simulator
-          SIM_NAME=$(xcrun simctl list devicetypes | grep -i "iPhone" | grep -v "SE\|Mini" | tail -1 | sed 's/ (com.*//')
-          echo "Using simulator: $SIM_NAME"
           set -o pipefail
           xcodebuild \
             -project Pavte.xcodeproj \
             -scheme Pavte \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=$SIM_NAME" \
+            -destination "generic/platform=iOS Simulator" \
             build \
             CODE_SIGNING_ALLOWED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
