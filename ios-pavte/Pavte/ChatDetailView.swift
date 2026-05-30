@@ -394,7 +394,7 @@ struct MessageBubbleView: View {
                     .padding(.top, 4)
                 }
             }
-            .padding(hasVisualMedia ? .zero : EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            .padding(hasVisualMedia ? EdgeInsets() : EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
             .background(hasVisualMedia ? Color.clear : (isOutgoing ? themeManager.outgoingBubbleColor : themeManager.incomingBubbleColor))
             .clipShape(RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius))
             .overlay(
