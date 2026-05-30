@@ -353,6 +353,20 @@ enum ThemeColor: String, CaseIterable, Codable {
 
 // MARK: - Passcode / 2FA / Active Sessions Models
 
+// MARK: - Read Receipt State
+enum ReadReceiptState {
+    case sent    // 2 gray checkmarks
+    case read    // 1 blue checkmark
+    case typing  // 2 blue checkmarks
+    
+    static func forMessage(_ message: Message, isOutgoing: Bool, isContactTyping: Bool) -> ReadReceiptState {
+        guard isOutgoing else { return .sent }
+        if isContactTyping { return .typing }
+        if message.isRead { return .read }
+        return .sent
+    }
+}
+
 struct ActiveSession: Identifiable, Codable, Equatable {
     let id: UUID
     var deviceName: String

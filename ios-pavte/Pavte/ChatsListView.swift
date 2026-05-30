@@ -222,7 +222,7 @@ struct ChatsListView: View {
         ]
         
         // Then send the message after typing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             appState.receiveMessage(
                 from: faxterUser,
                 chatId: chat.id,

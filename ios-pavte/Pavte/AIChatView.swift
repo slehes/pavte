@@ -2,11 +2,19 @@ import SwiftUI
 
 // MARK: - AI Chat Model
 struct AIChatMessage: Identifiable {
-    let id = UUID()
+    let id: UUID
     let isUser: Bool
     var text: String
     let timestamp: Date
     var isTyping: Bool = false
+    
+    init(id: UUID = UUID(), isUser: Bool, text: String, timestamp: Date = Date(), isTyping: Bool = false) {
+        self.id = id
+        self.isUser = isUser
+        self.text = text
+        self.timestamp = timestamp
+        self.isTyping = isTyping
+    }
 }
 
 // MARK: - AI Chat View (Modal — dark theme, ChatGPT-style)

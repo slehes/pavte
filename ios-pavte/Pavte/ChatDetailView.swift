@@ -369,7 +369,7 @@ struct ChatDetailView: View {
             for (index, photoData) in pendingPhotos.enumerated() {
                 let isLast = index == pendingPhotos.count - 1
                 let caption = isLast ? (trimmedText.isEmpty ? "📷" : trimmedText) : "📷"
-                appState.sendMessage(to: chat.id, text: caption, mediaType: .image, mediaData: photoData, shouldAutoReply: false)
+                appState.sendMessage(to: chat.id, text: caption, mediaType: .image, mediaData: photoData)
             }
             pendingPhotos.removeAll()
             messageText = ""
@@ -377,7 +377,7 @@ struct ChatDetailView: View {
         }
         
         guard !trimmedText.isEmpty else { return }
-        appState.sendMessage(to: chat.id, text: trimmedText, shouldAutoReply: false)
+        appState.sendMessage(to: chat.id, text: trimmedText)
         messageText = ""
     }
 
@@ -404,7 +404,7 @@ struct ChatDetailView: View {
         guard duration > 0.5 else { recordingDuration = 0; return }
 
         let text = String(format: "Голосовое %.0fс", duration)
-        appState.sendMessage(to: chat.id, text: text, mediaType: .voice, shouldAutoReply: false)
+        appState.sendMessage(to: chat.id, text: text, mediaType: .voice)
         recordingDuration = 0
     }
 

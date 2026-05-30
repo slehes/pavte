@@ -91,6 +91,9 @@ class AppState: ObservableObject {
     
     private var favoriteChatId: UUID?
     
+    // Typing indicator state
+    @Published private var typingChatIds: Set<UUID> = []
+    
     init() {
         let currentUserId = UUID()
         self.currentUser = User(
@@ -367,6 +370,18 @@ class AppState: ObservableObject {
             )
         }
         return getOrCreateChat(with: supportUser)
+    }
+    
+    // MARK: - Typing Indicator
+    func isTyping(chatId: UUID) -> Bool {
+        typingChatIds.contains(chatId)
+    }
+    
+    func simulateTyping(chatId: UUID) {
+        typingChatIds.insert(chatId)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+            self?.typingChatIds.remove(chatId)
+        }
     }
     
     // MARK: - Chat Methods

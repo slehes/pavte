@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var navigateToChatId: UUID? = nil
+    @State private var showAIChat = false
     
     var body: some View {
         if !appState.isPasscodeUnlocked && appState.isPasscodeRequired {
@@ -30,7 +31,7 @@ struct ContentView: View {
         ZStack {
             themeManager.wallpaperView().ignoresSafeArea()
             TabView(selection: $selectedTab) {
-                ChatsListView()
+                ChatsListView(showAIChat: $showAIChat)
                     .tabItem {
                         Label("Чаты", systemImage: "message.fill")
                     }
@@ -65,6 +66,9 @@ struct ContentView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: appState.notificationBanner != nil)
             }
+        }
+        .sheet(isPresented: $showAIChat) {
+            AIChatView()
         }
     }
 }
