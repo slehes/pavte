@@ -55,7 +55,7 @@ class AppState: ObservableObject {
     @Published var globalUsers: [User] = []
     
     // App version
-    static let appVersion = "1.0.1"
+    static let appVersion = "1.0.2"
     
     private var favoriteChatId: UUID?
     

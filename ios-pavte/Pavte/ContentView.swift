@@ -5,10 +5,19 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var selectedTab = 0
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     
     var body: some View {
         if appState.isLoggedIn {
-            mainAppView
+            if hasCompletedOnboarding {
+                mainAppView
+            } else {
+                OnboardingView(onComplete: {
+                    withAnimation {
+                        hasCompletedOnboarding = true
+                    }
+                })
+            }
         } else {
             WelcomeView()
         }
