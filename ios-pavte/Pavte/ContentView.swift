@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
@@ -65,11 +66,15 @@ struct WelcomeView: View {
                 VStack(spacing: 32) {
                     Spacer()
                     
-                    // Logo
+                    // Logo + Name
                     VStack(spacing: 12) {
-                        Image(systemName: "message.circle.fill")
-                            .font(.system(size: 90))
-                            .foregroundStyle(themeManager.accentColor)
+                        // App Logo (from assets)
+                        Image("icon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                            .shadow(color: themeManager.accentColor.opacity(0.3), radius: 12, x: 0, y: 4)
                         
                         Text("Pavte")
                             .font(.system(size: 42, weight: .bold, design: .rounded))

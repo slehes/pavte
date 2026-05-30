@@ -51,6 +51,12 @@ class AppState: ObservableObject {
     @Published var savedAccounts: [Account] = Account.predefinedAccounts
     @AppStorage("lastLoggedInAccountId") private var lastLoggedInAccountId: String = ""
     
+    // Global user directory (for search)
+    @Published var globalUsers: [User] = []
+    
+    // App version
+    static let appVersion = "1.0.1"
+    
     private var favoriteChatId: UUID?
     
     init() {
@@ -68,7 +74,7 @@ class AppState: ObservableObject {
 
         self.contacts = []
 
-        // Create "Избранное" chat — NO auto-reply timer
+        // Create "Избранное" chat — NO welcome message, NO auto-reply
         let favoriteUser = User(
             id: UUID(),
             username: "@favorites",
@@ -83,14 +89,25 @@ class AppState: ObservableObject {
         let favChatId = UUID()
         self.favoriteChatId = favChatId
 
-        let initialMessages = [
-            Message(id: UUID(), senderId: currentUserId, text: "Добро пожаловать в Избранное!", timestamp: Date().addingTimeInterval(-30), isRead: true)
-        ]
-
-        let favoriteChat = Chat(id: favChatId, participant: favoriteUser, messages: initialMessages, isPinned: true, isMuted: false, unreadCount: 0)
+        let favoriteChat = Chat(id: favChatId, participant: favoriteUser, messages: [], isPinned: true, isMuted: false, unreadCount: 0)
 
         self.chats = [favoriteChat]
         self.callHistory = []
+        
+        // Populate global user directory with predefined accounts
+        self.globalUsers = Account.predefinedAccounts.map { account in
+            User(
+                id: account.id,
+                username: account.username,
+                displayName: account.displayName,
+                bio: account.bio,
+                avatarName: account.avatarName,
+                avatarData: account.avatarData,
+                isOnline: false,
+                lastSeen: Date(),
+                phoneNumber: account.phoneNumber
+            )
+        }
         
         // Try to restore last logged in account
         if !lastLoggedInAccountId.isEmpty,
@@ -141,6 +158,21 @@ class AppState: ObservableObject {
         if !savedAccounts.contains(where: { $0.login.lowercased() == account.login.lowercased() }) {
             savedAccounts.append(account)
         }
+        // Add to global directory
+        let user = User(
+            id: account.id,
+            username: account.username,
+            displayName: account.displayName,
+            bio: account.bio,
+            avatarName: account.avatarName,
+            avatarData: account.avatarData,
+            isOnline: false,
+            lastSeen: Date(),
+            phoneNumber: account.phoneNumber
+        )
+        if !globalUsers.contains(where: { $0.id == account.id }) {
+            globalUsers.append(user)
+        }
     }
     
     func removeAccount(_ account: Account) {
@@ -160,6 +192,43 @@ class AppState: ObservableObject {
         savedAccounts[idx].phoneNumber = currentUser.phoneNumber
     }
     
+    // MARK: - Search
+    func searchUsers(query: String) -> [User] {
+        guard !query.isEmpty else { return [] }
+        let lowerQuery = query.lowercased()
+        // Remove current user from results
+        return globalUsers.filter { user in
+            user.id != currentUser.id &&
+            (user.displayName.lowercased().contains(lowerQuery) ||
+             user.username.lowercased().contains(lowerQuery))
+        }
+    }
+    
+    func searchChats(query: String) -> [Chat] {
+        guard !query.isEmpty else { return [] }
+        let lowerQuery = query.lowercased()
+        return chats.filter { chat in
+            chat.displayName.lowercased().contains(lowerQuery) ||
+            chat.participant.username.lowercased().contains(lowerQuery) ||
+            chat.lastMessagePreview.lowercased().contains(lowerQuery)
+        }
+    }
+    
+    // MARK: - Support Chat
+    func openSupportChat() -> Chat {
+        let supportUser = User(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            username: "@slehes",
+            displayName: "Поддержка Pavte",
+            bio: "Официальная поддержка мессенджера Pavte",
+            avatarName: "headphones.circle.fill",
+            isOnline: true,
+            lastSeen: Date(),
+            phoneNumber: ""
+        )
+        return getOrCreateChat(with: supportUser)
+    }
+    
     // MARK: - Chat Methods
     func sendMessage(to chatId: UUID, text: String, mediaType: Message.MediaType? = nil, mediaData: Data? = nil) {
         guard let index = chats.firstIndex(where: { $0.id == chatId }) else { return }
@@ -176,6 +245,7 @@ class AppState: ObservableObject {
         )
         
         chats[index].messages.append(newMessage)
+        // NO auto-reply — messages are truly sent
     }
     
     func markAsRead(chatId: UUID) {

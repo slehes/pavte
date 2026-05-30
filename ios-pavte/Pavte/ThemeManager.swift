@@ -13,6 +13,24 @@ class ThemeManager: ObservableObject {
     @AppStorage("enableVibration") var enableVibration: Bool = true
     @AppStorage("chatWallpaper") var chatWallpaper: String = "default"
     
+    // Custom wallpaper data (stored in UserDefaults as base64)
+    @AppStorage("customWallpaperData") var customWallpaperDataBase64: String = ""
+    
+    var customWallpaperData: Data? {
+        get {
+            guard !customWallpaperDataBase64.isEmpty else { return nil }
+            return Data(base64Encoded: customWallpaperDataBase64)
+        }
+        set {
+            if let data = newValue {
+                customWallpaperDataBase64 = data.base64EncodedString()
+            } else {
+                customWallpaperDataBase64 = ""
+            }
+            objectWillChange.send()
+        }
+    }
+    
     var themeColor: ThemeColor {
         get { ThemeColor(rawValue: themeColorRaw) ?? .blue }
         set { themeColorRaw = newValue.rawValue; objectWillChange.send() }
@@ -52,45 +70,54 @@ class ThemeManager: ObservableObject {
         }
     }
     
-    static let wallpapers = ["default", "gradient1", "gradient2", "gradient3", "pattern1", "pattern2"]
+    static let wallpapers = ["default", "gradient1", "gradient2", "gradient3", "pattern1", "pattern2", "custom"]
     
     func wallpaperView() -> some View {
         Group {
-            switch chatWallpaper {
-            case "gradient1":
-                LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            case "gradient2":
-                LinearGradient(colors: [.green.opacity(0.3), .teal.opacity(0.3)], startPoint: .top, endPoint: .bottom)
-            case "gradient3":
-                LinearGradient(colors: [.orange.opacity(0.3), .pink.opacity(0.3)], startPoint: .leading, endPoint: .trailing)
-            case "pattern1":
-                Color(.systemGray6).overlay(
-                    GeometryReader { geo in
-                        Path { path in
-                            let size: CGFloat = 30
-                            for x in stride(from: 0, to: geo.size.width, by: size) {
-                                for y in stride(from: 0, to: geo.size.height, by: size) {
-                                    path.addEllipse(in: CGRect(x: x, y: y, width: 4, height: 4))
+            if chatWallpaper == "custom", let data = customWallpaperData,
+               let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .opacity(0.4)
+            } else {
+                switch chatWallpaper {
+                case "gradient1":
+                    LinearGradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                case "gradient2":
+                    LinearGradient(colors: [.green.opacity(0.3), .teal.opacity(0.3)], startPoint: .top, endPoint: .bottom)
+                case "gradient3":
+                    LinearGradient(colors: [.orange.opacity(0.3), .pink.opacity(0.3)], startPoint: .leading, endPoint: .trailing)
+                case "pattern1":
+                    Color(.systemGray6).overlay(
+                        GeometryReader { geo in
+                            Path { path in
+                                let size: CGFloat = 30
+                                for x in stride(from: 0, to: geo.size.width, by: size) {
+                                    for y in stride(from: 0, to: geo.size.height, by: size) {
+                                        path.addEllipse(in: CGRect(x: x, y: y, width: 4, height: 4))
+                                    }
                                 }
                             }
+                            .fill(Color.gray.opacity(0.2))
                         }
-                        .fill(Color.gray.opacity(0.2))
-                    }
-                )
-            case "pattern2":
-                Color(.systemGray6).overlay(
-                    GeometryReader { geo in
-                        Path { path in
-                            for x in stride(from: 0, to: geo.size.width, by: 40) {
-                                path.move(to: CGPoint(x: x, y: 0))
-                                path.addLine(to: CGPoint(x: x, y: geo.size.height))
+                    )
+                case "pattern2":
+                    Color(.systemGray6).overlay(
+                        GeometryReader { geo in
+                            Path { path in
+                                for x in stride(from: 0, to: geo.size.width, by: 40) {
+                                    path.move(to: CGPoint(x: x, y: 0))
+                                    path.addLine(to: CGPoint(x: x, y: geo.size.height))
+                                }
                             }
+                            .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                         }
-                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                    }
-                )
-            default:
-                Color(.systemGroupedBackground)
+                    )
+                default:
+                    Color(.systemGroupedBackground)
+                }
             }
         }
     }

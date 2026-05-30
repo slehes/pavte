@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showAccountSwitcher = false
+    @State private var navigateToSupportChat = false
     
     var body: some View {
         NavigationStack {
@@ -103,7 +104,9 @@ struct SettingsView: View {
                     }
                     
                     Button {
-                        // Contact support
+                        // Open support chat with @slehes
+                        let _ = appState.openSupportChat()
+                        navigateToSupportChat = true
                     } label: {
                         SettingsRow(icon: "envelope.fill", color: .green, title: "Связаться с поддержкой")
                     }
@@ -116,7 +119,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Версия")
                         Spacer()
-                        Text("1.0.0")
+                        Text(AppState.appVersion)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -143,6 +146,14 @@ struct SettingsView: View {
         .sheet(isPresented: $showAccountSwitcher) {
             AccountSwitcherView()
         }
+        .background(
+            NavigationLink(
+                destination: ChatDetailView(chat: appState.openSupportChat()),
+                isActive: $navigateToSupportChat,
+                label: { EmptyView() }
+            )
+            .hidden()
+        )
     }
 }
 
@@ -171,7 +182,6 @@ struct AccountSwitcherView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) var dismiss
     @State private var showLoginSheet = false
-    @State private var showRegisterSheet = false
     
     var body: some View {
         NavigationStack {
@@ -302,10 +312,13 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Logo
-                Image(systemName: "message.circle.fill")
-                    .font(.system(size: 70))
-                    .foregroundStyle(themeManager.accentColor)
+                // Logo above title
+                Image("icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: themeManager.accentColor.opacity(0.2), radius: 8, x: 0, y: 2)
                     .padding(.top, 40)
                 
                 Text("Pavte")
@@ -424,10 +437,13 @@ struct RegisterView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Logo
-                Image(systemName: "person.badge.plus")
-                    .font(.system(size: 60))
-                    .foregroundStyle(themeManager.accentColor)
+                // Logo above title
+                Image("icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: themeManager.accentColor.opacity(0.2), radius: 8, x: 0, y: 2)
                     .padding(.top, 40)
                 
                 Text("Регистрация")
@@ -826,10 +842,14 @@ struct ChatAppearanceView: View {
     }
 }
 
-// MARK: - Wallpaper Settings
+// MARK: - Wallpaper Settings (with custom photo upload)
 struct WallpaperSettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
     let wallpapers = ThemeManager.wallpapers
+    
+    // Custom wallpaper picker
+    @State private var showCustomPicker = false
+    @State private var selectedWallpaperItem: PhotosPickerItem?
     
     var body: some View {
         ScrollView {
@@ -840,26 +860,73 @@ struct WallpaperSettingsView: View {
             ], spacing: 12) {
                 ForEach(wallpapers, id: \.self) { wallpaper in
                     Button {
-                        withAnimation {
-                            themeManager.chatWallpaper = wallpaper
+                        if wallpaper == "custom" {
+                            showCustomPicker = true
+                        } else {
+                            withAnimation {
+                                themeManager.chatWallpaper = wallpaper
+                            }
                         }
                     } label: {
-                        WallpaperPreview(wallpaperId: wallpaper)
+                        if wallpaper == "custom" {
+                            // Custom wallpaper tile
+                            ZStack {
+                                if let data = themeManager.customWallpaperData,
+                                   let uiImage = UIImage(data: data) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 150)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .overlay(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.3)))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray5))
+                                        .frame(height: 150)
+                                        .overlay(
+                                            VStack(spacing: 4) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .font(.title)
+                                                    .foregroundStyle(themeManager.accentColor)
+                                                Text("Своё фото")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        )
+                                }
+                                
+                                if themeManager.chatWallpaper == "custom" {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title)
+                                        .foregroundStyle(themeManager.accentColor)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                        .padding(8)
+                                }
+                            }
                             .frame(height: 150)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(themeManager.chatWallpaper == wallpaper ? themeManager.accentColor : Color.clear, lineWidth: 3)
+                                    .stroke(themeManager.chatWallpaper == "custom" ? themeManager.accentColor : Color.clear, lineWidth: 3)
                             )
-                            .overlay(
-                                Group {
-                                    if themeManager.chatWallpaper == wallpaper {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.title)
-                                            .foregroundStyle(themeManager.accentColor)
+                        } else {
+                            WallpaperPreview(wallpaperId: wallpaper)
+                                .frame(height: 150)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(themeManager.chatWallpaper == wallpaper ? themeManager.accentColor : Color.clear, lineWidth: 3)
+                                )
+                                .overlay(
+                                    Group {
+                                        if themeManager.chatWallpaper == wallpaper {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.title)
+                                                .foregroundStyle(themeManager.accentColor)
+                                        }
                                     }
-                                }
-                            )
+                                )
+                        }
                     }
                 }
             }
@@ -867,6 +934,19 @@ struct WallpaperSettingsView: View {
         }
         .navigationTitle("Фон чатов")
         .navigationBarTitleDisplayMode(.inline)
+        .photosPicker(isPresented: $showCustomPicker, selection: $selectedWallpaperItem, matching: .any(of: [.images, .videos]))
+        .onChange(of: selectedWallpaperItem) { _, newItem in
+            guard let newItem = newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    themeManager.customWallpaperData = data
+                    withAnimation {
+                        themeManager.chatWallpaper = "custom"
+                    }
+                }
+                selectedWallpaperItem = nil
+            }
+        }
     }
 }
 
@@ -1029,36 +1109,21 @@ struct PrivacySettingsView: View {
 
 // MARK: - Passcode Settings
 struct PasscodeSettingsView: View {
-    @State private var passcodeEnabled = false
-    @State private var autoLock = "1 минута"
-    
-    let autoLockOptions = ["Выключено", "1 минута", "5 минут", "1 час", "5 часов"]
+    @State private var isPasscodeEnabled = false
+    @State private var passcode = ""
     
     var body: some View {
         Form {
             Section {
-                Toggle("Код-пароль", isOn: $passcodeEnabled)
+                Toggle("Код-пароль", isOn: $isPasscodeEnabled)
             }
             
-            if passcodeEnabled {
+            if isPasscodeEnabled {
                 Section {
-                    Button("Изменить код-пароль") {
-                        // Change passcode
-                    }
-                }
-                
-                Section {
-                    Picker("Блокировать через", selection: $autoLock) {
-                        ForEach(autoLockOptions, id: \.self) { option in
-                            Text(option).tag(option)
-                        }
-                    }
+                    SecureField("Введите код-пароль", text: $passcode)
+                        .keyboardType(.numberPad)
                 } header: {
-                    Text("Автоблокировка")
-                }
-                
-                Section {
-                    Toggle("Разблокировка Face ID", isOn: .constant(true))
+                    Text("Установить код-пароль")
                 }
             }
         }
@@ -1069,25 +1134,18 @@ struct PasscodeSettingsView: View {
 
 // MARK: - Two Factor Auth
 struct TwoFactorAuthView: View {
-    @State private var twoFactorEnabled = false
+    @State private var is2FAEnabled = false
     
     var body: some View {
         Form {
             Section {
-                Toggle("Двухфакторная аутентификация", isOn: $twoFactorEnabled)
-            } footer: {
-                Text("При входе в аккаунт на новом устройстве потребуется ввести дополнительный пароль.")
+                Toggle("Двухфакторная аутентификация", isOn: $is2FAEnabled)
             }
             
-            if twoFactorEnabled {
+            if is2FAEnabled {
                 Section {
-                    Button("Изменить пароль") {
-                        // Change 2FA password
-                    }
-                    
-                    Button("Установить email для восстановления") {
-                        // Set recovery email
-                    }
+                    Text("Настройки двухфакторной аутентификации будут доступны в следующей версии.")
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -1098,29 +1156,26 @@ struct TwoFactorAuthView: View {
 
 // MARK: - Blocked Users
 struct BlockedUsersView: View {
-    @EnvironmentObject var themeManager: ThemeManager
+    @State private var blockedUsers: [String] = []
     
     var body: some View {
-        List {
-            Section {
-                Text("Заблокированные пользователи не могут отправлять вам сообщения и видеть вашу информацию.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Section {
-                VStack(spacing: 12) {
-                    Image(systemName: "hand.raised.slash")
-                        .font(.system(size: 50))
-                        .foregroundStyle(.secondary)
-                    Text("Список пуст")
-                        .font(.headline)
-                    Text("У вас нет заблокированных пользователей")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        Form {
+            if blockedUsers.isEmpty {
+                Section {
+                    VStack(spacing: 12) {
+                        Image(systemName: "hand.raised.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                        Text("Нет заблокированных пользователей")
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
+            } else {
+                ForEach(blockedUsers, id: \.self) { user in
+                    Text(user)
+                }
             }
         }
         .navigationTitle("Заблокированные")
@@ -1130,130 +1185,53 @@ struct BlockedUsersView: View {
 
 // MARK: - Storage Settings
 struct StorageSettingsView: View {
-    @EnvironmentObject var themeManager: ThemeManager
-    @State private var storageUsed: Double = 256.5
-    @State private var photosSize: Double = 128.2
-    @State private var videosSize: Double = 89.1
-    @State private var documentsSize: Double = 25.8
-    @State private var voiceSize: Double = 13.4
-    @State private var showClearAlert = false
-    
     var body: some View {
-        List {
+        Form {
             Section {
-                VStack(spacing: 16) {
-                    ZStack {
-                        Circle()
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 20)
-                            .frame(width: 150, height: 150)
-                        
-                        Circle()
-                            .trim(from: 0, to: 0.6)
-                            .stroke(themeManager.accentColor, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                            .frame(width: 150, height: 150)
-                            .rotationEffect(.degrees(-90))
-                        
-                        VStack {
-                            Text(String(format: "%.1f", storageUsed))
-                                .font(.title)
-                                .fontWeight(.bold)
-                            Text("МБ")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    
-                    Text("Использовано хранилище")
-                        .font(.headline)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical)
-            }
-            
-            Section {
-                StorageRow(icon: "photo.fill", color: .blue, title: "Фото", size: photosSize)
-                StorageRow(icon: "video.fill", color: .purple, title: "Видео", size: videosSize)
-                StorageRow(icon: "doc.fill", color: .orange, title: "Документы", size: documentsSize)
-                StorageRow(icon: "mic.fill", color: .green, title: "Голосовые", size: voiceSize)
-            } header: {
-                Text("По категориям")
-            }
-            
-            Section {
-                Button("Очистить кэш") {
-                    showClearAlert = true
+                HStack {
+                    Text("Использовано")
+                    Spacer()
+                    Text("12 МБ")
+                        .foregroundStyle(.secondary)
                 }
                 
-                Button("Очистить все данные") {
-                    // Clear all
+                HStack {
+                    Text("Свободно")
+                    Spacer()
+                    Text("Неограничено")
+                        .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.red)
+            }
+            
+            Section {
+                Button("Очистить кэш") { }
+                    .foregroundStyle(.red)
             }
         }
         .navigationTitle("Хранилище")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Очистить кэш?", isPresented: $showClearAlert) {
-            Button("Отмена", role: .cancel) { }
-            Button("Очистить", role: .destructive) {
-                // Clear cache
-            }
-        } message: {
-            Text("Это удалит все кэшированные данные. Медиафайлы будут загружены заново при просмотре.")
-        }
-    }
-}
-
-struct StorageRow: View {
-    let icon: String
-    let color: Color
-    let title: String
-    let size: Double
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundStyle(color)
-                .frame(width: 30)
-            
-            Text(title)
-            
-            Spacer()
-            
-            Text(String(format: "%.1f МБ", size))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
 // MARK: - Network Settings
 struct NetworkSettingsView: View {
+    @State private var useMobileData = true
     @State private var autoDownloadPhotos = true
     @State private var autoDownloadVideos = false
-    @State private var autoDownloadDocuments = true
-    @State private var useLessData = false
     
     var body: some View {
         Form {
             Section {
-                Toggle("Фото", isOn: $autoDownloadPhotos)
-                Toggle("Видео", isOn: $autoDownloadVideos)
-                Toggle("Документы", isOn: $autoDownloadDocuments)
+                Toggle("Использовать мобильную сеть", isOn: $useMobileData)
+            } header: {
+                Text("Подключение")
+            }
+            
+            Section {
+                Toggle("Автозагрузка фото", isOn: $autoDownloadPhotos)
+                Toggle("Автозагрузка видео", isOn: $autoDownloadVideos)
             } header: {
                 Text("Автозагрузка медиа")
-            }
-            
-            Section {
-                Toggle("Режим экономии данных", isOn: $useLessData)
-            } header: {
-                Text("Экономия трафика")
-            } footer: {
-                Text("Снижает качество медиа для экономии трафика")
-            }
-            
-            Section {
-                Toggle("Использовать меньше данных для звонков", isOn: .constant(false))
-            } header: {
-                Text("Звонки")
             }
         }
         .navigationTitle("Сеть и загрузка")
@@ -1261,38 +1239,34 @@ struct NetworkSettingsView: View {
     }
 }
 
-// MARK: - FAQ View
+// MARK: - FAQ
 struct FAQView: View {
-    var body: some View {
-        List {
-            Section {
-                FAQItem(question: "Как изменить тему приложения?", answer: "Перейдите в Настройки → Оформление → Тема и цвета")
-                FAQItem(question: "Как заблокировать пользователя?", answer: "Откройте профиль пользователя и нажмите «Заблокировать»")
-                FAQItem(question: "Как включить двухфакторную аутентификацию?", answer: "Перейдите в Настройки → Конфиденциальность → Двухфакторная аутентификация")
-                FAQItem(question: "Как очистить кэш?", answer: "Перейдите в Настройки → Данные → Хранилище → Очистить кэш")
-                FAQItem(question: "Как изменить размер шрифта?", answer: "Перейдите в Настройки → Оформление → Оформление чатов → Размер шрифта")
-            }
-        }
-        .navigationTitle("FAQ")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct FAQItem: View {
-    let question: String
-    let answer: String
-    @State private var isExpanded = false
+    let faqItems = [
+        ("Как изменить имя пользователя?", "Перейдите в Настройки → Профиль и измените поле «Имя пользователя». Изменения сохраняются автоматически."),
+        ("Как создать группу?", "Перейдите на вкладку «Контакты» и нажмите «Создать группу». Введите название, выберите аватарку и добавьте участников."),
+        ("Как установить фон чата?", "Перейдите в Настройки → Фон чатов и выберите один из предустановленных фонов или загрузите своё фото."),
+        ("Как заблокировать пользователя?", "Откройте профиль пользователя и нажмите «Заблокировать». Заблокированные пользователи не смогут вам писать."),
+        ("Как сменить аккаунт?", "В Настройках нажмите на иконку аккаунта в правом верхнем углу или удерживайте палец на настройках для вызова меню смены аккаунта."),
+        ("Как написать в поддержку?", "Перейдите в Настройки → Связаться с поддержкой. Откроется чат с @slehes — разработчиком Pavte.")
+    ]
     
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            Text(answer)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.vertical, 4)
-        } label: {
-            Text(question)
-                .font(.headline)
+        List {
+            ForEach(faqItems, id: \.0) { question, answer in
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(question)
+                            .font(.headline)
+                        Text(answer)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
         }
+        .navigationTitle("Часто задаваемые вопросы")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

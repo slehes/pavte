@@ -38,11 +38,6 @@ struct ChatDetailView: View {
     var currentChat: Chat {
         appState.chats.first { $0.id == chat.id } ?? chat
     }
-    
-    /// Check if this is the Favorites chat (Избранное) — no auto-reply
-    private var isFavoritesChat: Bool {
-        chat.participant.username == "@favorites"
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,11 +48,6 @@ struct ChatDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
-        .confirmationDialog("Позвонить", isPresented: $showCallSheet) {
-            Button("Голосовой звонок") { startCall(type: .voice) }
-            Button("Видеозвонок") { startCall(type: .video) }
-            Button("Отмена", role: .cancel) {}
-        }
         .sheet(isPresented: $showUserProfile) {
             UserProfileView(user: chat.participant)
         }
@@ -138,7 +128,9 @@ struct ChatDetailView: View {
                         showAttachmentPopup.toggle()
                     }
                 },
-                onVoiceRecordToggle: toggleVoiceRecording
+                onVoiceRecordToggle: toggleVoiceRecording,
+                onVoiceCall: { startCall(type: .voice) },
+                onVideoCall: { startCall(type: .video) }
             )
             .focused($isTextFieldFocused)
         }
@@ -174,12 +166,6 @@ struct ChatDetailView: View {
                 }
             }
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: 16) {
-                Button { showCallSheet = true } label: { Image(systemName: "phone.fill") }
-                Button { showCallSheet = true } label: { Image(systemName: "video.fill") }
-            }
-        }
     }
 
     // MARK: - Helpers
@@ -207,14 +193,7 @@ struct ChatDetailView: View {
                     let mediaType: Message.MediaType = isVideo ? .video : .image
                     let text = isVideo ? "Видео" : "Фото"
                     appState.sendMessage(to: chat.id, text: text, mediaType: mediaType, mediaData: data)
-
-                    // NO auto-reply in Favorites
-                    if !isFavoritesChat {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            let replies = ["Понял!", "Отлично", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
-                            if let reply = replies.randomElement() { simulateReply(reply) }
-                        }
-                    }
+                    // NO auto-reply — messages are truly sent
                 }
             }
             selectedPhotoItems = []
@@ -225,14 +204,7 @@ struct ChatDetailView: View {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         appState.sendMessage(to: chat.id, text: messageText)
         messageText = ""
-
-        // NO auto-reply in Favorites
-        if !isFavoritesChat {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                let replies = ["Понял!", "Отлично", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
-                if let reply = replies.randomElement() { simulateReply(reply) }
-            }
-        }
+        // NO auto-reply — messages are truly sent
     }
 
     // MARK: - Voice Recording
@@ -260,20 +232,7 @@ struct ChatDetailView: View {
         let text = String(format: "Голосовое %.0fс", duration)
         appState.sendMessage(to: chat.id, text: text, mediaType: .voice)
         recordingDuration = 0
-
-        // NO auto-reply in Favorites
-        if !isFavoritesChat {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                let replies = ["Понял!", "Ок!", "Спасибо!"]
-                if let reply = replies.randomElement() { simulateReply(reply) }
-            }
-        }
-    }
-
-    private func simulateReply(_ text: String) {
-        guard let index = appState.chats.firstIndex(where: { $0.id == chat.id }) else { return }
-        let replyMessage = Message(id: UUID(), senderId: chat.participant.id, text: text, timestamp: Date(), isRead: false)
-        appState.chats[index].messages.append(replyMessage)
+        // NO auto-reply — messages are truly sent
     }
 
     private func startCall(type: CallRecord.CallType) {
@@ -813,7 +772,7 @@ struct VideoPlayerView: View {
     }
 }
 
-// MARK: - Message Input Bar
+// MARK: - Message Input Bar (Redesigned: +, text, mic, phone, video)
 struct MessageInputBar: View {
     @Binding var text: String
     @Binding var isRecording: Bool
@@ -821,6 +780,8 @@ struct MessageInputBar: View {
     let onSend: () -> Void
     let onAttachment: () -> Void
     let onVoiceRecordToggle: () -> Void
+    let onVoiceCall: () -> Void
+    let onVideoCall: () -> Void
     @EnvironmentObject var themeManager: ThemeManager
 
     private var formattedDuration: String {
@@ -828,9 +789,12 @@ struct MessageInputBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
+            // + button (attachment)
             Button(action: onAttachment) {
-                Image(systemName: "paperclip").font(.title2).foregroundStyle(themeManager.accentColor)
+                Image(systemName: "plus.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(themeManager.accentColor)
             }
 
             if isRecording {
@@ -849,6 +813,7 @@ struct MessageInputBar: View {
                     .lineLimit(1...5)
             }
 
+            // Voice message / Send button
             Button {
                 if isRecording || text.isEmpty { onVoiceRecordToggle() } else { onSend() }
             } label: {
@@ -856,8 +821,29 @@ struct MessageInputBar: View {
                     .font(.title2)
                     .foregroundStyle(isRecording ? .red : themeManager.accentColor)
             }
+
+            // Phone call button
+            Button(action: onVoiceCall) {
+                Image(systemName: "phone.fill")
+                    .font(.body)
+                    .foregroundStyle(themeManager.accentColor)
+                    .frame(width: 32, height: 32)
+                    .background(themeManager.accentColor.opacity(0.12))
+                    .clipShape(Circle())
+            }
+
+            // Video call button
+            Button(action: onVideoCall) {
+                Image(systemName: "video.fill")
+                    .font(.body)
+                    .foregroundStyle(themeManager.accentColor)
+                    .frame(width: 32, height: 32)
+                    .background(themeManager.accentColor.opacity(0.12))
+                    .clipShape(Circle())
+            }
         }
-        .padding(.horizontal).padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(Color(.systemBackground))
     }
 }
