@@ -14,21 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 26 for iOS 26
+      - name: Select Xcode
         run: |
-          # Find and select the latest Xcode 26.x version available
-          XCODE26=$(ls -d /Applications/Xcode_26.*.app 2>/dev/null | sort -V | tail -1)
-          if [ -n "$XCODE26" ]; then
-            sudo xcode-select -s "$XCODE26"
-            echo "Selected $XCODE26"
-          else
-            echo "WARNING: Xcode 26 not found, falling back to latest available"
-            XCODE_LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
-            if [ -n "$XCODE_LATEST" ]; then
-              sudo xcode-select -s "$XCODE_LATEST"
-              echo "Selected $XCODE_LATEST"
+          # Try Xcode 16.x first, fall back to latest
+          for xc in /Applications/Xcode_16.2.app /Applications/Xcode_16.1.app /Applications/Xcode_16.0.app; do
+            if [ -d "$xc" ]; then
+              sudo xcode-select -s "$xc/Contents/Developer"
+              echo "Selected $xc"
+              break
             fi
-          fi
+          done
           echo "=== Xcode version ==="
           xcodebuild -version
           echo "=== Available iOS SDKs ==="

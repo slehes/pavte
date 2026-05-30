@@ -3,12 +3,11 @@ options:
   bundleIdPrefix: com.pavte
   deploymentTarget:
     iOS: "18.0"
-  xcodeVersion: "26.0"
   createIntermediateGroups: true
   groupSortPosition: top
 settings:
   base:
-    SWIFT_VERSION: "5.0"
+    SWIFT_VERSION: "5.10"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
 targets:
   Pavte:
@@ -22,6 +21,7 @@ targets:
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
         INFOPLIST_KEY_CFBundleDisplayName: "Pavte"
         PRODUCT_BUNDLE_IDENTIFIER: com.pavte.app
         MARKETING_VERSION: "1.0.4"
@@ -30,22 +30,3 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_EMIT_LOC_STRINGS: YES
         GENERATE_INFOPLIST_FILE: YES
-    info:
-      path: Info.plist
-      properties:
-        CFBundleDevelopmentRegion: ru
-        CFBundleDisplayName: Pavte
-        CFBundleExecutable: $(EXECUTABLE_NAME)
-        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
-        CFBundleInfoDictionaryVersion: "6.0"
-        CFBundleName: $(PRODUCT_NAME)
-        CFBundlePackageType: $(PRODUCT_BUNDLE_PACKAGE_TYPE)
-        CFBundleShortVersionString: "1.0.4"
-        CFBundleVersion: "1"
-        LSRequiresIPhoneOS: true
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
-          UISceneConfigurations: {}
-        UILaunchScreen: {}
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
