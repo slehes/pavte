@@ -1,26 +1,23 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Implement all user-requested features for Pavte messenger
+Task: Implement all requested features for Pavte iOS messenger app
 
 Work Log:
-- Cloned repo from GitHub and examined all source files
-- Analyzed 5 reference photos to understand desired UI design
-- Rewrote Models.swift: added groupedMediaData, hasNewMessage, photoGroup media type
-- Rewrote ChatDetailView.swift: redesigned attachment menu (Telegram-style), added read receipt checkmarks (2 gray/blue), added grouped photo view, photo caption sheet, video background rectangle
-- Rewrote ChatsListView.swift: added UserAvatarView with colored initials fallback, ChatAvatarView, new message indicator (blue dot), double checkmarks in chat list
-- Rewrote SettingsView.swift: replaced circle video background with rectangle (Telegram-style), added ProfileAvatarWithVideoBackground, VideoBackgroundRectangle, improved active sessions with real device info
-- Updated AppState.swift: added groupedMediaData support, hasNewMessage flag
-- Created backend server with Express + SQLite + WebSocket
-- Pushed all changes to GitHub
+- Cloned repo from GitHub and read all 10+ Swift source files
+- Removed "Пользователь Pavte" bio text from both predefined accounts
+- Removed "О себе" (About) section from Profile Settings view
+- Added phone number changing functionality (any number) with alert input
+- Fixed typing indicator - replaced blocky timer-based animation with smooth SwiftUI .repeatForever bouncing dots
+- Redesigned + attachment popup menu to Telegram-style grid with rounded rectangle icons (Camera, Photo, File, Voice, Location, Contact)
+- Changed video background from full-screen to rectangular area only (profile avatar section)
+- Reduced chat list item sizes by ~2x (avatar 52→40px, online indicator 14→10px, padding reduced)
+- Added real calling via tel:// URL scheme in ChatDetailView and CallsView
+- Added global video wallpaper for entire messenger in ThemeManager
+- Added video wallpaper picker in WallpaperSettingsView
+- Committed and pushed all changes to GitHub
 
 Stage Summary:
-- Video background now uses rectangle (not circle) — Telegram style
-- Read receipts: 2 gray checkmarks (not read), 2 blue (read)
-- Attachment menu redesigned with camera, photo, file, voice sections
-- Grouped photos with caption support
-- New message indicator (blue dot) in chat list
-- Avatars for all users with colored initials
-- Active sessions with real device model, IP address
-- Backend server with auth, messaging, file upload, WebSocket
-- All changes pushed to GitHub
+- 6 files modified: AppState.swift, CallsView.swift, ChatDetailView.swift, ChatsListView.swift, SettingsView.swift, ThemeManager.swift
+- All changes pushed to https://github.com/slehes/pavte.git
+- Key features implemented: phone number editing, real calls, video wallpaper, compact chat list, Telegram attachment menu, smooth typing indicator
