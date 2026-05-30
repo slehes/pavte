@@ -1,0 +1,96 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List available Xcode versions
+        run: ls /Applications/ | grep Xcode || true
+
+      - name: Select latest available Xcode
+        run: |
+          # Try to find the latest Xcode version available on the runner
+          for xcode in Xcode_26 Xcode_16.4 Xcode_16.3 Xcode_16.2 Xcode_16.1 Xcode_16.0; do
+            if [ -d "/Applications/${xcode}.app" ]; then
+              sudo xcode-select -s "/Applications/${xcode}.app"
+              echo "Selected ${xcode}"
+              break
+            fi
+          done
+          echo "Xcode version:"
+          xcodebuild -version
+          echo "Available SDKs:"
+          xcodebuild -showsdks | grep -i ios || true
+
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen 2>/dev/null || true
+          xcodegen --version || echo "XcodeGen not available"
+
+      - name: Generate Xcode project with XcodeGen
+        working-directory: ios-pavte
+        run: |
+          if command -v xcodegen &> /dev/null; then
+            xcodegen generate
+            echo "Project generated with XcodeGen"
+          else
+            echo "XcodeGen not available, using existing project.pbxproj"
+          fi
+
+      - name: Build archive
+        working-directory: ios-pavte
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Pavte.xcodeproj \
+            -scheme Pavte \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/Pavte.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee build.log | tail -50
+
+      - name: Show build log on failure
+        if: failure()
+        working-directory: ios-pavte
+        run: |
+          echo "=== BUILD FAILED ==="
+          tail -100 build.log || true
+          echo "=== Checking for issues ==="
+          grep -i "error:" build.log || true
+          grep -i "warning:" build.log || true
+
+      - name: Package unsigned IPA artifact
+        working-directory: ios-pavte
+        run: |
+          mkdir -p build/Payload
+          if [ -d "build/Pavte.xcarchive/Products/Applications/Pavte.app" ]; then
+            cp -R build/Pavte.xcarchive/Products/Applications/Pavte.app build/Payload/
+            cd build
+            zip -qry Pavte-unsigned.ipa Payload
+            echo "IPA created successfully"
+          else
+            echo "ERROR: Pavte.app not found in archive"
+            find build/Pavte.xcarchive -type f 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pavte-unsigned-ipa
+          path: ios-pavte/build/Pavte-unsigned.ipa
+          retention-days: 14
