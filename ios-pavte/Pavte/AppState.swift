@@ -74,11 +74,19 @@ class AppState: ObservableObject {
     @AppStorage("appPasscode") private var appPasscode: String = ""
     @AppStorage("isPasscodeEnabled") private var isPasscodeEnabled: Bool = false
     
+    // Public accessor for passcode enabled state
+    var passcodeEnabled: Bool {
+        isPasscodeEnabled
+    }
+    
     // Active sessions
     @Published var activeSessions: [ActiveSession] = []
     
+    // Incoming message notification banner
+    @Published var notificationBanner: NotificationBanner?
+    
     // App version
-    static let appVersion = "1.0.3"
+    static let appVersion = "1.0.4"
     
     private var favoriteChatId: UUID?
     
@@ -517,5 +525,41 @@ class AppState: ObservableObject {
     
     func terminateAllOtherSessions() {
         activeSessions.removeAll { !$0.isCurrent }
+    }
+    
+    // MARK: - Incoming Message Notification
+    func receiveMessage(from contact: User, chatId: UUID, text: String) {
+        // Add message to chat
+        guard let index = chats.firstIndex(where: { $0.id == chatId }) else { return }
+        
+        let newMessage = Message(
+            id: UUID(),
+            senderId: contact.id,
+            text: text,
+            timestamp: Date(),
+            isRead: false
+        )
+        
+        chats[index].messages.append(newMessage)
+        chats[index].unreadCount += 1
+        
+        // Show notification banner
+        let banner = NotificationBanner(
+            senderName: contact.displayName,
+            messageText: text,
+            chatId: chatId
+        )
+        notificationBanner = banner
+        
+        // Auto-dismiss after 4 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+            if self?.notificationBanner?.id == banner.id {
+                self?.notificationBanner = nil
+            }
+        }
+    }
+    
+    func dismissNotificationBanner() {
+        notificationBanner = nil
     }
 }

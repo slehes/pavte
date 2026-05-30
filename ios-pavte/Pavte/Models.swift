@@ -23,7 +23,8 @@ struct User: Identifiable, Codable, Equatable {
         avatarData: nil,
         isOnline: true,
         lastSeen: Date(),
-        phoneNumber: "+7 999 123-45-67"
+        phoneNumber: "+7 999 123-45-67",
+        avatarVideoBackgroundData: nil
     )
 }
 
@@ -214,7 +215,8 @@ struct Chat: Identifiable, Equatable {
             avatarData: avatarData,
             isOnline: false,
             lastSeen: Date(),
-            phoneNumber: ""
+            phoneNumber: "",
+            avatarVideoBackgroundData: nil
         )
         
         var groupMembers: [GroupMember] = [
@@ -252,7 +254,8 @@ struct Chat: Identifiable, Equatable {
             avatarData: avatarData,
             isOnline: false,
             lastSeen: Date(),
-            phoneNumber: ""
+            phoneNumber: "",
+            avatarVideoBackgroundData: nil
         )
         
         var chat = Chat(id: id, participant: channelUser, messages: [], isPinned: false, isMuted: false, unreadCount: 0)
@@ -361,6 +364,7 @@ struct ActiveSession: Identifiable, Codable, Equatable {
     var location: String
     var isCurrent: Bool
     
+    @MainActor
     static func currentSession(appVersion: String) -> ActiveSession {
         ActiveSession(
             id: UUID(),
@@ -401,6 +405,19 @@ struct ActiveSession: Identifiable, Codable, Equatable {
                 isCurrent: false
             )
         ]
+    }
+}
+
+// MARK: - Notification Banner Model
+struct NotificationBanner: Identifiable, Equatable {
+    let id = UUID()
+    let senderName: String
+    let messageText: String
+    let chatId: UUID
+    let timestamp: Date = Date()
+    
+    static func == (lhs: NotificationBanner, rhs: NotificationBanner) -> Bool {
+        lhs.id == rhs.id
     }
 }
 

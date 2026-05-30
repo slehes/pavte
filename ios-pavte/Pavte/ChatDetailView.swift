@@ -252,36 +252,31 @@ struct ChatDetailView: View {
                     } else if chat.chatType == .group {
                         Text("\(currentChat.members.count) участников")
                             .font(.caption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.secondary)
                     } else if chat.chatType == .channel {
                         Text("\(currentChat.members.count) подписчиков")
                             .font(.caption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
-                // Voice call button in nav bar
                 Button {
                     startCall(type: .voice)
                 } label: {
                     Image(systemName: "phone.fill")
-                        .font(.body)
                         .foregroundStyle(.gray)
                 }
                 
-                // Video call button in nav bar
                 Button {
                     startCall(type: .video)
                 } label: {
                     Image(systemName: "video.fill")
-                        .font(.body)
                         .foregroundStyle(.gray)
                 }
                 
-                // Pinned messages
                 if !currentChat.pinnedMessages.isEmpty {
                     Button {
                         showPinnedMessages = true
@@ -394,7 +389,7 @@ struct PinnedMessagesView: View {
     @Environment(\.dismiss) var dismiss
     
     var currentChat: Chat {
-        appState.chats.first { $0.id == chatId } ?? Chat(id: chatId, participant: User(id: UUID(), username: "", displayName: "", bio: "", avatarName: "person.circle.fill", isOnline: false, lastSeen: Date(), phoneNumber: ""), messages: [], isPinned: false, isMuted: false, unreadCount: 0)
+        appState.chats.first { $0.id == chatId } ?? Chat(id: chatId, participant: User(id: UUID(), username: "", displayName: "", bio: "", avatarName: "person.circle.fill", isOnline: false, lastSeen: Date(), phoneNumber: "", avatarVideoBackgroundData: nil), messages: [], isPinned: false, isMuted: false, unreadCount: 0)
     }
     
     var pinnedMessages: [Message] {
@@ -1003,7 +998,7 @@ struct MessageInputBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // + button — GRAY color
+            // + button
             Button(action: onAttachment) {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
@@ -1026,13 +1021,13 @@ struct MessageInputBar: View {
                     .lineLimit(1...5)
             }
 
-            // Voice / Send button — GRAY when mic, accent when send
+            // Voice / Send
             Button {
                 if isRecording || text.isEmpty { onVoiceRecordToggle() } else { onSend() }
             } label: {
                 Image(systemName: isRecording ? "stop.circle.fill" : (text.isEmpty ? "mic.fill" : "arrow.up.circle.fill"))
                     .font(.title2)
-                    .foregroundStyle(isRecording ? .red : (text.isEmpty ? .gray : themeManager.accentColor))
+                    .foregroundStyle(isRecording ? .red : .gray)
             }
         }
         .padding(.horizontal, 12)
@@ -1102,7 +1097,8 @@ struct UserProfileView: View {
             participant: User(
                 id: UUID(), username: "@test", displayName: "Тест",
                 bio: "Тестовый пользователь", avatarName: "person.circle.fill",
-                isOnline: true, lastSeen: Date(), phoneNumber: "+7 999 000-00-00"
+                isOnline: true, lastSeen: Date(), phoneNumber: "+7 999 000-00-00",
+                avatarVideoBackgroundData: nil
             ),
             messages: [
                 Message(id: UUID(), senderId: UUID(), text: "Привет!", timestamp: Date(), isRead: true),

@@ -6,6 +6,7 @@ struct ContentView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var selectedTab = 0
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @State private var navigateToChatId: UUID? = nil
     
     var body: some View {
         if !appState.isPasscodeUnlocked && appState.isPasscodeRequired {
@@ -27,10 +28,7 @@ struct ContentView: View {
     
     private var mainAppView: some View {
         ZStack {
-            // Global wallpaper background — visible in ALL tabs
-            themeManager.wallpaperView()
-                .ignoresSafeArea()
-            
+            themeManager.wallpaperView().ignoresSafeArea()
             TabView(selection: $selectedTab) {
                 ChatsListView()
                     .tabItem {
@@ -57,6 +55,16 @@ struct ContentView: View {
                     .tag(3)
             }
             .tint(themeManager.accentColor)
+            
+            // Incoming message notification banner
+            if let banner = appState.notificationBanner {
+                NotificationBannerView(banner: banner) {
+                    navigateToChatId = banner.chatId
+                    appState.dismissNotificationBanner()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: appState.notificationBanner != nil)
+            }
         }
     }
 }
@@ -175,6 +183,61 @@ struct PasscodeLockView: View {
             }
             passcode = ""
         }
+    }
+}
+
+// MARK: - Notification Banner View
+struct NotificationBannerView: View {
+    let banner: NotificationBanner
+    let onTap: () -> Void
+    @EnvironmentObject var appState: AppState
+    @State private var offset: CGFloat = 0
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Avatar
+                Circle()
+                    .fill(Color.blue.opacity(0.15))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(String(banner.senderName.prefix(1)).uppercased())
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.blue)
+                    )
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(banner.senderName)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+                    Text(banner.messageText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+            )
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 

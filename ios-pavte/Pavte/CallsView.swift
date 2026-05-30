@@ -80,6 +80,7 @@ struct CallsView: View {
                 }
             }
         }
+        .background(themeManager.wallpaperView().ignoresSafeArea())
     }
 }
 

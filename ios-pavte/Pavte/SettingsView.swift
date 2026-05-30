@@ -68,7 +68,7 @@ struct SettingsView: View {
                     }
                     
                     NavigationLink(destination: TwoFASettingsView()) {
-                        SettingsRow(icon: "lock.doublefill", color: .green, title: "Двухфакторная аутентификация")
+                        SettingsRow(icon: "lock.fill", color: .green, title: "Двухфакторная аутентификация")
                     }
                     
                     NavigationLink(destination: ActiveSessionsView()) {
@@ -143,6 +143,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .background(themeManager.wallpaperView().ignoresSafeArea())
         .sheet(isPresented: $showAccountSwitcher) {
             AccountSwitcherView()
         }
@@ -631,7 +632,11 @@ struct RegisterView: View {
             bio: "",
             avatarName: "person.circle.fill",
             avatarData: nil,
-            phoneNumber: ""
+            phoneNumber: "",
+            avatarVideoBackgroundData: nil,
+            passcode: nil,
+            is2FAEnabled: false,
+            twoFASecret: nil
         )
         
         appState.addAccount(newAccount)
@@ -841,7 +846,7 @@ struct PasscodeSettingsView: View {
         .navigationTitle("Код-пароль")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            isPasscodeOn = appState.isPasscodeEnabled
+            isPasscodeOn = appState.passcodeEnabled
         }
         .alert("Установить код-пароль", isPresented: $showSetPasscode) {
             SecureField("4-значный код", text: $newPasscode)
@@ -860,7 +865,7 @@ struct PasscodeSettingsView: View {
                 }
             }
             Button("Отмена", role: .cancel) {
-                if !appState.isPasscodeEnabled {
+                if !appState.passcodeEnabled {
                     isPasscodeOn = false
                 }
                 newPasscode = ""
@@ -1196,189 +1201,105 @@ struct ChatAppearanceView: View {
 // MARK: - Wallpaper Settings
 struct WallpaperSettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var showAddPhotoPicker = false
-    @State private var showAddVideoPicker = false
-    @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var selectedVideoItem: PhotosPickerItem?
+    let wallpapers = ThemeManager.wallpapers
+    
+    @State private var showCustomPicker = false
+    @State private var selectedWallpaperItem: PhotosPickerItem?
     
     var body: some View {
-        List {
-            // + Add button at top
-            Section {
-                HStack(spacing: 16) {
-                    // Add photo
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                ForEach(wallpapers, id: \.self) { wallpaper in
                     Button {
-                        showAddPhotoPicker = true
+                        if wallpaper == "custom" {
+                            showCustomPicker = true
+                        } else {
+                            withAnimation {
+                                themeManager.chatWallpaper = wallpaper
+                            }
+                        }
                     } label: {
-                        VStack(spacing: 4) {
+                        if wallpaper == "custom" {
                             ZStack {
+                                if let data = themeManager.customWallpaperData,
+                                   let uiImage = UIImage(data: data) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(height: 150)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .overlay(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.3)))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray5))
+                                        .frame(height: 150)
+                                        .overlay(
+                                            VStack(spacing: 4) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .font(.title)
+                                                    .foregroundStyle(themeManager.accentColor)
+                                                Text("Своё фото")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        )
+                                }
+                                
+                                if themeManager.chatWallpaper == "custom" {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title)
+                                        .foregroundStyle(themeManager.accentColor)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                        .padding(8)
+                                }
+                            }
+                            .frame(height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(.systemGray5))
-                                    .frame(width: 80, height: 80)
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .foregroundStyle(.gray)
-                            }
-                            Text("Фото")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    
-                    // Add video
-                    Button {
-                        showAddVideoPicker = true
-                    } label: {
-                        VStack(spacing: 4) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(.systemGray5))
-                                    .frame(width: 80, height: 80)
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .foregroundStyle(.gray)
-                            }
-                            Text("Видео")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            } header: {
-                Text("Добавить фон")
-            } footer: {
-                Text("Поддерживаются фото и видео. Добавленный фон будет первым в списке.")
-            }
-            
-            // Custom wallpapers (first in list)
-            let customWallpapers = themeManager.wallpapers.filter { !$0.isBuiltIn }
-            if !customWallpapers.isEmpty {
-                Section("Мои фоны") {
-                    ForEach(customWallpapers) { wallpaper in
-                        wallpaperRow(wallpaper)
-                    }
-                    .onDelete { indexSet in
-                        // Map from custom-only index to full wallpapers index
-                        let customs = themeManager.wallpapers.indices.filter { !themeManager.wallpapers[$0].isBuiltIn }
-                        for idx in indexSet {
-                            if idx < customs.count {
-                                themeManager.deleteWallpaper(at: IndexSet(integer: customs[idx]))
-                            }
+                                    .stroke(themeManager.chatWallpaper == "custom" ? themeManager.accentColor : Color.clear, lineWidth: 3)
+                            )
+                        } else {
+                            WallpaperPreview(wallpaperId: wallpaper)
+                                .frame(height: 150)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(themeManager.chatWallpaper == wallpaper ? themeManager.accentColor : Color.clear, lineWidth: 3)
+                                )
+                                .overlay(
+                                    Group {
+                                        if themeManager.chatWallpaper == wallpaper {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.title)
+                                                .foregroundStyle(themeManager.accentColor)
+                                        }
+                                    }
+                                )
                         }
                     }
                 }
             }
-            
-            // Built-in wallpapers
-            Section("Стандартные") {
-                ForEach(themeManager.wallpapers.filter { $0.isBuiltIn }) { wallpaper in
-                    wallpaperRow(wallpaper)
-                }
-            }
+            .padding()
         }
         .navigationTitle("Фон чатов")
         .navigationBarTitleDisplayMode(.inline)
-        .photosPicker(isPresented: $showAddPhotoPicker, selection: $selectedPhotoItem, matching: .images)
-        .photosPicker(isPresented: $showAddVideoPicker, selection: $selectedVideoItem, matching: .videos)
-        .onChange(of: selectedPhotoItem) { _, newItem in
+        .photosPicker(isPresented: $showCustomPicker, selection: $selectedWallpaperItem, matching: .any(of: [.images, .videos]))
+        .onChange(of: selectedWallpaperItem) { _, newItem in
             guard let newItem = newItem else { return }
             Task {
                 if let data = try? await newItem.loadTransferable(type: Data.self) {
-                    themeManager.addCustomWallpaper(name: "Мой фон", imageData: data)
-                    // Auto-select the newly added wallpaper
-                    if let first = themeManager.wallpapers.first {
-                        themeManager.selectWallpaper(first)
+                    themeManager.customWallpaperData = data
+                    withAnimation {
+                        themeManager.chatWallpaper = "custom"
                     }
                 }
-                selectedPhotoItem = nil
+                selectedWallpaperItem = nil
             }
-        }
-        .onChange(of: selectedVideoItem) { _, newItem in
-            guard let newItem = newItem else { return }
-            Task {
-                if let data = try? await newItem.loadTransferable(type: Data.self) {
-                    themeManager.addCustomVideoWallpaper(name: "Мой видео-фон", videoData: data)
-                    if let first = themeManager.wallpapers.first {
-                        themeManager.selectWallpaper(first)
-                    }
-                }
-                selectedVideoItem = nil
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func wallpaperRow(_ wallpaper: WallpaperItem) -> some View {
-        Button {
-            themeManager.selectWallpaper(wallpaper)
-        } label: {
-            HStack(spacing: 12) {
-                // Thumbnail
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.systemGray5))
-                        .frame(width: 56, height: 56)
-                    
-                    if let imageData = wallpaper.imageData, let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 56, height: 56)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    } else if wallpaper.isVideo {
-                        Image(systemName: "video.fill")
-                            .foregroundStyle(.gray)
-                    } else if let builtInId = wallpaper.builtInId {
-                        builtInThumbnail(builtInId)
-                    }
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(wallpaper.name)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    if wallpaper.isVideo {
-                        Text("Видео")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                if themeManager.selectedWallpaperId == wallpaper.id.uuidString {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(themeManager.accentColor)
-                }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func builtInThumbnail(_ id: String) -> some View {
-        switch id {
-        case "default":
-            Color(.systemGroupedBackground)
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        case "gradient1":
-            LinearGradient(colors: [.blue.opacity(0.5), .purple.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        case "gradient2":
-            LinearGradient(colors: [.green.opacity(0.5), .teal.opacity(0.5)], startPoint: .top, endPoint: .bottom)
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        case "gradient3":
-            LinearGradient(colors: [.orange.opacity(0.5), .pink.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
-                .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        case "pattern1":
-            Image(systemName: "circle.grid.3x3.fill").foregroundStyle(.gray)
-        case "pattern2":
-            Image(systemName: "lines.measurement.vertical").foregroundStyle(.gray)
-        default:
-            Color(.systemGray5)
         }
     }
 }

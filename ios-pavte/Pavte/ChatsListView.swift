@@ -147,10 +147,19 @@ struct ChatsListView: View {
             .searchable(text: $searchText, prompt: "Поиск по юзернейму или чату")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showNewChat = true
-                    } label: {
-                        Image(systemName: "square.and.pencil")
+                    HStack(spacing: 12) {
+                        Button {
+                            simulateIncomingMessage()
+                        } label: {
+                            Image(systemName: "bell.badge.fill")
+                                .foregroundStyle(.blue)
+                        }
+                        
+                        Button {
+                            showNewChat = true
+                        } label: {
+                            Image(systemName: "square.and.pencil")
+                        }
                     }
                 }
             }
@@ -158,6 +167,41 @@ struct ChatsListView: View {
                 NewChatView()
             }
         }
+        .background(themeManager.wallpaperView().ignoresSafeArea())
+    }
+    
+    private func simulateIncomingMessage() {
+        // Find or create a chat with faxter for the demo
+        let faxterUser = User(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222") ?? UUID(),
+            username: "@faxter",
+            displayName: "faxter",
+            bio: "Пользователь Pavte",
+            avatarName: "person.circle.fill",
+            isOnline: true,
+            lastSeen: Date(),
+            phoneNumber: "+7 999 765-43-21",
+            avatarVideoBackgroundData: nil
+        )
+        
+        let chat = appState.getOrCreateChat(with: faxterUser)
+        
+        let messages = [
+            "Привет! Как дела?",
+            "Что делаешь?",
+            "Давай встретимся завтра",
+            "Посмотри это фото!",
+            "Ты свободен сегодня?",
+            "Хахаха, точно!",
+            "Отправь мне файл",
+            "Ладно, договорились 👍"
+        ]
+        
+        appState.receiveMessage(
+            from: faxterUser,
+            chatId: chat.id,
+            text: messages.randomElement() ?? "Привет!"
+        )
     }
 }
 
@@ -248,10 +292,10 @@ struct ChatRowView: View {
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(chat.isMuted ? Color.gray : themeManager.accentColor)
-                            .clipShape(Capsule())
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue)
+                            .clipShape(Circle())
                     } else if let lastMessage = chat.lastMessage,
                               lastMessage.senderId == appState.currentUser.id {
                         Image(systemName: lastMessage.isRead ? "checkmark.circle.fill" : "checkmark.circle")

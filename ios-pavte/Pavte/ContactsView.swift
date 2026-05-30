@@ -85,6 +85,7 @@ struct ContactsView: View {
                 CreateChannelView()
             }
         }
+        .background(themeManager.wallpaperView().ignoresSafeArea())
     }
 }
 
