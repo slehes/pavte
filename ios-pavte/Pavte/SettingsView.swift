@@ -1251,7 +1251,7 @@ struct WallpaperSettingsView: View {
             }
             
             // Custom wallpapers (first in list)
-            let customWallpapers = themeManager.wallpapers.filter { !/bin/bash.isBuiltIn }
+            let customWallpapers = themeManager.wallpapers.filter { !$0.isBuiltIn }
             if !customWallpapers.isEmpty {
                 Section("Мои фоны") {
                     ForEach(customWallpapers) { wallpaper in
@@ -1259,7 +1259,7 @@ struct WallpaperSettingsView: View {
                     }
                     .onDelete { indexSet in
                         // Map from custom-only index to full wallpapers index
-                        let customs = themeManager.wallpapers.indices.filter { !themeManager.wallpapers[/bin/bash].isBuiltIn }
+                        let customs = themeManager.wallpapers.indices.filter { !themeManager.wallpapers[$0].isBuiltIn }
                         for idx in indexSet {
                             if idx < customs.count {
                                 themeManager.deleteWallpaper(at: IndexSet(integer: customs[idx]))
@@ -1271,7 +1271,7 @@ struct WallpaperSettingsView: View {
             
             // Built-in wallpapers
             Section("Стандартные") {
-                ForEach(themeManager.wallpapers.filter { /bin/bash.isBuiltIn }) { wallpaper in
+                ForEach(themeManager.wallpapers.filter { $0.isBuiltIn }) { wallpaper in
                     wallpaperRow(wallpaper)
                 }
             }
