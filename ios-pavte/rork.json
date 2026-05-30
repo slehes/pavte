@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "Pavte",
+      "path": "ios-pavte",
+      "framework": "swift"
+    }
+  ],
+  "$schema": "https://rork.com/schema/rork.json"
+}
