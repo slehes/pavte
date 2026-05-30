@@ -91,9 +91,18 @@ struct CallRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             // Avatar
-            Image(systemName: call.participant.avatarName)
-                .font(.system(size: 44))
-                .foregroundStyle(themeManager.accentColor)
+            if let avatarData = call.participant.avatarData,
+               let uiImage = UIImage(data: avatarData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: call.participant.avatarName)
+                    .font(.system(size: 44))
+                    .foregroundStyle(themeManager.accentColor)
+            }
             
             // Call info
             VStack(alignment: .leading, spacing: 4) {
@@ -184,9 +193,18 @@ struct ActiveCallView: View {
                 // Participant info
                 VStack(spacing: 16) {
                     if callType != .video || !isVideoEnabled {
-                        Image(systemName: participant.avatarName)
-                            .font(.system(size: 100))
-                            .foregroundStyle(.white)
+                        if let avatarData = participant.avatarData,
+                           let uiImage = UIImage(data: avatarData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: participant.avatarName)
+                                .font(.system(size: 100))
+                                .foregroundStyle(.white)
+                        }
                     }
                     
                     Text(participant.displayName)
@@ -405,9 +423,18 @@ struct IncomingCallView: View {
                 Spacer()
                 
                 VStack(spacing: 16) {
-                    Image(systemName: participant.avatarName)
-                        .font(.system(size: 100))
-                        .foregroundStyle(.white)
+                    if let avatarData = participant.avatarData,
+                       let uiImage = UIImage(data: avatarData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: participant.avatarName)
+                            .font(.system(size: 100))
+                            .foregroundStyle(.white)
+                    }
                     
                     Text(participant.displayName)
                         .font(.largeTitle)

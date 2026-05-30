@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import AVKit
 import AVFoundation
+import UniformTypeIdentifiers
 
 // MARK: - ChatDetailView
 struct ChatDetailView: View {
@@ -9,14 +10,19 @@ struct ChatDetailView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var messageText = ""
-    @State private var showAttachmentMenu = false
     @State private var showCallSheet = false
     @State private var showUserProfile = false
     @FocusState private var isTextFieldFocused: Bool
 
+    // Attachment popup
+    @State private var showAttachmentPopup = false
+
     // PhotosPicker
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
+
+    // File picker
+    @State private var showFilePicker = false
 
     // Voice recording
     @State private var isRecording = false
@@ -29,6 +35,11 @@ struct ChatDetailView: View {
     var currentChat: Chat {
         appState.chats.first { $0.id == chat.id } ?? chat
     }
+    
+    /// Check if this is the Favorites chat (Избранное) — no auto-reply
+    private var isFavoritesChat: Bool {
+        chat.participant.username == "@favorites"
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,11 +50,6 @@ struct ChatDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
-        .confirmationDialog("Прикрепить", isPresented: $showAttachmentMenu) {
-            Button("Фото / Видео из галереи") { showPhotoPicker = true }
-            Button("Голосовое сообщение") { startVoiceRecording() }
-            Button("Отмена", role: .cancel) {}
-        }
         .confirmationDialog("Позвонить", isPresented: $showCallSheet) {
             Button("Голосовой звонок") { startCall(type: .voice) }
             Button("Видеозвонок") { startCall(type: .video) }
@@ -91,15 +97,45 @@ struct ChatDetailView: View {
     }
 
     private var inputBar: some View {
-        MessageInputBar(
-            text: $messageText,
-            isRecording: $isRecording,
-            recordingDuration: $recordingDuration,
-            onSend: sendMessage,
-            onAttachment: { showAttachmentMenu = true },
-            onVoiceRecordToggle: toggleVoiceRecording
-        )
-        .focused($isTextFieldFocused)
+        VStack(spacing: 0) {
+            // Attachment popup menu — appears just above the input bar
+            if showAttachmentPopup {
+                AttachmentPopupView(
+                    onSelectPhoto: {
+                        showAttachmentPopup = false
+                        showPhotoPicker = true
+                    },
+                    onSelectFile: {
+                        showAttachmentPopup = false
+                        showFilePicker = true
+                    },
+                    onSelectVoice: {
+                        showAttachmentPopup = false
+                        startVoiceRecording()
+                    },
+                    onDismiss: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showAttachmentPopup = false
+                        }
+                    }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            MessageInputBar(
+                text: $messageText,
+                isRecording: $isRecording,
+                recordingDuration: $recordingDuration,
+                onSend: sendMessage,
+                onAttachment: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showAttachmentPopup.toggle()
+                    }
+                },
+                onVoiceRecordToggle: toggleVoiceRecording
+            )
+            .focused($isTextFieldFocused)
+        }
     }
 
     @ToolbarContentBuilder
@@ -152,9 +188,12 @@ struct ChatDetailView: View {
                     let text = isVideo ? "Видео" : "Фото"
                     appState.sendMessage(to: chat.id, text: text, mediaType: mediaType, mediaData: data)
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        let replies = ["Понял!", "Отлично 👍", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
-                        if let reply = replies.randomElement() { simulateReply(reply) }
+                    // NO auto-reply in Favorites
+                    if !isFavoritesChat {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            let replies = ["Понял!", "Отлично", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
+                            if let reply = replies.randomElement() { simulateReply(reply) }
+                        }
                     }
                 }
             }
@@ -167,9 +206,12 @@ struct ChatDetailView: View {
         appState.sendMessage(to: chat.id, text: messageText)
         messageText = ""
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            let replies = ["Понял!", "Отлично 👍", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
-            if let reply = replies.randomElement() { simulateReply(reply) }
+        // NO auto-reply in Favorites
+        if !isFavoritesChat {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                let replies = ["Понял!", "Отлично", "Хорошо, сделаю", "Ок!", "Спасибо!", "Договорились"]
+                if let reply = replies.randomElement() { simulateReply(reply) }
+            }
         }
     }
 
@@ -199,9 +241,12 @@ struct ChatDetailView: View {
         appState.sendMessage(to: chat.id, text: text, mediaType: .voice)
         recordingDuration = 0
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            let replies = ["Понял!", "Ок!", "Спасибо!"]
-            if let reply = replies.randomElement() { simulateReply(reply) }
+        // NO auto-reply in Favorites
+        if !isFavoritesChat {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                let replies = ["Понял!", "Ок!", "Спасибо!"]
+                if let reply = replies.randomElement() { simulateReply(reply) }
+            }
         }
     }
 
@@ -213,6 +258,88 @@ struct ChatDetailView: View {
 
     private func startCall(type: CallRecord.CallType) {
         appState.addCallRecord(participant: chat.participant, callType: type, isOutgoing: true, duration: 0, isMissed: false)
+    }
+}
+
+// MARK: - Attachment Popup View (appears near the paperclip button)
+struct AttachmentPopupView: View {
+    let onSelectPhoto: () -> Void
+    let onSelectFile: () -> Void
+    let onSelectVoice: () -> Void
+    let onDismiss: () -> Void
+    @EnvironmentObject var themeManager: ThemeManager
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Dark rounded popup menu
+            VStack(spacing: 0) {
+                Button {
+                    onSelectPhoto()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.title3)
+                            .foregroundStyle(themeManager.accentColor)
+                            .frame(width: 32, height: 32)
+                        Text("Фото / Видео из галереи")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+
+                Divider().padding(.horizontal, 12)
+
+                Button {
+                    onSelectFile()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "doc.badge.plus")
+                            .font(.title3)
+                            .foregroundStyle(themeManager.accentColor)
+                            .frame(width: 32, height: 32)
+                        Text("Файл из проводника")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+
+                Divider().padding(.horizontal, 12)
+
+                Button {
+                    onSelectVoice()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "mic.fill")
+                            .font(.title3)
+                            .foregroundStyle(themeManager.accentColor)
+                            .frame(width: 32, height: 32)
+                        Text("Голосовое сообщение")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemGray5))
+                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 }
 
@@ -612,7 +739,15 @@ struct UserProfileView: View {
             List {
                 Section {
                     VStack(spacing: 16) {
-                        Image(systemName: user.avatarName).font(.system(size: 80)).foregroundStyle(themeManager.accentColor)
+                        if let avatarData = user.avatarData, let uiImage = UIImage(data: avatarData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80, height: 80)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: user.avatarName).font(.system(size: 80)).foregroundStyle(themeManager.accentColor)
+                        }
                         Text(user.displayName).font(.title).fontWeight(.bold)
                         if user.isOnline { Text("в сети").foregroundStyle(.green) }
                     }

@@ -1,8 +1,10 @@
 import SwiftUI
+import PhotosUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
+    @State private var showAccountSwitcher = false
     
     var body: some View {
         NavigationStack {
@@ -11,9 +13,18 @@ struct SettingsView: View {
                 Section {
                     NavigationLink(destination: ProfileSettingsView()) {
                         HStack(spacing: 16) {
-                            Image(systemName: appState.currentUser.avatarName)
-                                .font(.system(size: 60))
-                                .foregroundStyle(themeManager.accentColor)
+                            if let avatarData = appState.currentUser.avatarData,
+                               let uiImage = UIImage(data: avatarData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(Circle())
+                            } else {
+                                Image(systemName: appState.currentUser.avatarName)
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(themeManager.accentColor)
+                            }
                             
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(appState.currentUser.displayName)
@@ -111,6 +122,26 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Настройки")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAccountSwitcher = true
+                    } label: {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                    }
+                }
+            }
+            .contextMenu {
+                Button {
+                    showAccountSwitcher = true
+                } label: {
+                    Label("Сменить аккаунт", systemImage: "person.2.circle")
+                }
+            }
+        }
+        // Account switcher modal — appears on long press / button tap
+        .sheet(isPresented: $showAccountSwitcher) {
+            AccountSwitcherView()
         }
     }
 }
@@ -134,7 +165,397 @@ struct SettingsRow: View {
     }
 }
 
-// MARK: - Profile Settings
+// MARK: - Account Switcher (Modal)
+struct AccountSwitcherView: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) var dismiss
+    @State private var showLoginSheet = false
+    @State private var showRegisterSheet = false
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Dimmed background
+                Color.black.opacity(0.01).ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Header
+                    HStack {
+                        Spacer()
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
+                    
+                    // Account list card
+                    VStack(spacing: 0) {
+                        // Add account button
+                        Button {
+                            showLoginSheet = true
+                        } label: {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .strokeBorder(themeManager.accentColor, lineWidth: 2)
+                                        .frame(width: 46, height: 46)
+                                    Image(systemName: "plus")
+                                        .font(.title3)
+                                        .foregroundStyle(themeManager.accentColor)
+                                }
+                                Text("Добавить аккаунт")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 14)
+                        }
+                        
+                        if !appState.savedAccounts.isEmpty {
+                            Divider().padding(.horizontal, 18)
+                        }
+                        
+                        // Account list
+                        ForEach(appState.savedAccounts) { account in
+                            Button {
+                                appState.loginAs(account)
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 14) {
+                                    if let avatarData = account.avatarData,
+                                       let uiImage = UIImage(data: avatarData) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 46, height: 46)
+                                            .clipShape(Circle())
+                                    } else {
+                                        Image(systemName: "person.circle.fill")
+                                            .font(.system(size: 46))
+                                            .foregroundStyle(themeManager.accentColor)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(account.displayName)
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
+                                        Text(account.username)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    if appState.currentAccount?.id == account.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(themeManager.accentColor)
+                                            .font(.title3)
+                                    }
+                                }
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 12)
+                            }
+                            
+                            if account.id != appState.savedAccounts.last?.id {
+                                Divider().padding(.horizontal, 18)
+                            }
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(.systemGray5))
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                }
+            }
+            .navigationTitle("")
+            .sheet(isPresented: $showLoginSheet) {
+                LoginView(onDismiss: { dismiss() })
+            }
+        }
+    }
+}
+
+// MARK: - Login View
+struct LoginView: View {
+    let onDismiss: () -> Void
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) var dismiss
+    @State private var loginText = ""
+    @State private var passwordText = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var showRegister = false
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                // Logo
+                Image(systemName: "message.circle.fill")
+                    .font(.system(size: 70))
+                    .foregroundStyle(themeManager.accentColor)
+                    .padding(.top, 40)
+                
+                Text("Pavte")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("Войдите в свой аккаунт")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                
+                // Login field
+                VStack(spacing: 14) {
+                    HStack {
+                        Image(systemName: "person")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        TextField("Логин или эл. почта", text: $loginText)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    HStack {
+                        Image(systemName: "lock")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        SecureField("Пароль", text: $passwordText)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal, 24)
+                
+                // Login button
+                Button {
+                    performLogin()
+                } label: {
+                    Text("Войти")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(themeManager.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+                
+                // Register link
+                Button {
+                    showRegister = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Нет аккаунта?")
+                            .foregroundStyle(.secondary)
+                        Text("Зарегистрироваться")
+                            .foregroundStyle(themeManager.accentColor)
+                            .fontWeight(.semibold)
+                    }
+                    .font(.subheadline)
+                }
+                .padding(.bottom, 24)
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Отмена") { dismiss() }
+                }
+            }
+            .alert("Ошибка", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .sheet(isPresented: $showRegister) {
+                RegisterView(onDismiss: onDismiss)
+            }
+        }
+    }
+    
+    private func performLogin() {
+        guard !loginText.isEmpty && !passwordText.isEmpty else {
+            errorMessage = "Введите логин и пароль"
+            showError = true
+            return
+        }
+        
+        let success = appState.login(login: loginText, password: passwordText)
+        if success {
+            onDismiss()
+        } else {
+            errorMessage = "Неверный логин или пароль"
+            showError = true
+        }
+    }
+}
+
+// MARK: - Register View
+struct RegisterView: View {
+    let onDismiss: () -> Void
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) var dismiss
+    @State private var loginText = ""
+    @State private var passwordText = ""
+    @State private var confirmPassword = ""
+    @State private var displayName = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                // Logo
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 60))
+                    .foregroundStyle(themeManager.accentColor)
+                    .padding(.top, 40)
+                
+                Text("Регистрация")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                // Fields
+                VStack(spacing: 14) {
+                    HStack {
+                        Image(systemName: "person")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        TextField("Имя", text: $displayName)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    HStack {
+                        Image(systemName: "at")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        TextField("Логин", text: $loginText)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    HStack {
+                        Image(systemName: "lock")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        SecureField("Пароль", text: $passwordText)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                        SecureField("Повторите пароль", text: $confirmPassword)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal, 24)
+                
+                // Register button
+                Button {
+                    performRegister()
+                } label: {
+                    Text("Зарегистрироваться")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(themeManager.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Назад") { dismiss() }
+                }
+            }
+            .alert("Ошибка", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private func performRegister() {
+        guard !loginText.isEmpty && !passwordText.isEmpty && !displayName.isEmpty else {
+            errorMessage = "Заполните все поля"
+            showError = true
+            return
+        }
+        
+        guard passwordText == confirmPassword else {
+            errorMessage = "Пароли не совпадают"
+            showError = true
+            return
+        }
+        
+        guard passwordText.count >= 6 else {
+            errorMessage = "Пароль должен быть не менее 6 символов"
+            showError = true
+            return
+        }
+        
+        // Check if login already exists
+        if appState.savedAccounts.contains(where: { $0.login.lowercased() == loginText.lowercased() }) {
+            errorMessage = "Этот логин уже занят"
+            showError = true
+            return
+        }
+        
+        let newAccount = Account(
+            id: UUID(),
+            login: loginText,
+            password: passwordText,
+            displayName: displayName,
+            username: "@\(loginText)",
+            bio: "",
+            avatarName: "person.circle.fill",
+            avatarData: nil,
+            phoneNumber: ""
+        )
+        
+        appState.addAccount(newAccount)
+        appState.loginAs(newAccount)
+        onDismiss()
+    }
+}
+
+// MARK: - Profile Settings (with Avatar Upload)
 struct ProfileSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
@@ -143,17 +564,31 @@ struct ProfileSettingsView: View {
     @State private var bio: String = ""
     @State private var showSavedAlert = false
     
+    // Avatar picker
+    @State private var showAvatarPicker = false
+    @State private var selectedAvatarItem: PhotosPickerItem?
+    
     var body: some View {
         Form {
             Section {
                 VStack {
                     Button {
-                        // Image picker
+                        showAvatarPicker = true
                     } label: {
                         ZStack(alignment: .bottomTrailing) {
-                            Image(systemName: appState.currentUser.avatarName)
-                                .font(.system(size: 80))
-                                .foregroundStyle(themeManager.accentColor)
+                            if let avatarData = appState.currentUser.avatarData,
+                               let uiImage = UIImage(data: avatarData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .font(.system(size: 80))
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            } else {
+                                Image(systemName: appState.currentUser.avatarName)
+                                    .font(.system(size: 80))
+                                    .foregroundStyle(themeManager.accentColor)
+                            }
                             
                             Image(systemName: "camera.circle.fill")
                                 .font(.title)
@@ -218,6 +653,16 @@ struct ProfileSettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Ваш профиль был обновлён")
+        }
+        .photosPicker(isPresented: $showAvatarPicker, selection: $selectedAvatarItem, matching: .images)
+        .onChange(of: selectedAvatarItem) { _, newItem in
+            guard let newItem = newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    appState.updateAvatar(avatarData: data)
+                }
+                selectedAvatarItem = nil
+            }
         }
     }
 }

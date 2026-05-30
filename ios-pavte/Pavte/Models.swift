@@ -7,6 +7,7 @@ struct User: Identifiable, Codable, Equatable {
     var displayName: String
     var bio: String
     var avatarName: String
+    var avatarData: Data?
     var isOnline: Bool
     var lastSeen: Date
     var phoneNumber: String
@@ -17,6 +18,7 @@ struct User: Identifiable, Codable, Equatable {
         displayName: "Я",
         bio: "Мой статус",
         avatarName: "person.circle.fill",
+        avatarData: nil,
         isOnline: true,
         lastSeen: Date(),
         phoneNumber: "+7 999 123-45-67"

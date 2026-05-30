@@ -91,9 +91,18 @@ struct ContactRowView: View {
         } label: {
             HStack(spacing: 12) {
                 ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: contact.avatarName)
-                        .font(.system(size: 44))
-                        .foregroundStyle(themeManager.accentColor)
+                    if let avatarData = contact.avatarData,
+                       let uiImage = UIImage(data: avatarData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 44, height: 44)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: contact.avatarName)
+                            .font(.system(size: 44))
+                            .foregroundStyle(themeManager.accentColor)
+                    }
                     
                     if themeManager.showOnlineStatus && contact.isOnline {
                         Circle()
@@ -145,9 +154,18 @@ struct ContactDetailView: View {
                 // Profile header
                 Section {
                     VStack(spacing: 16) {
-                        Image(systemName: contact.avatarName)
-                            .font(.system(size: 80))
-                            .foregroundStyle(themeManager.accentColor)
+                        if let avatarData = contact.avatarData,
+                           let uiImage = UIImage(data: avatarData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80, height: 80)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: contact.avatarName)
+                                .font(.system(size: 80))
+                                .foregroundStyle(themeManager.accentColor)
+                        }
                         
                         VStack(spacing: 4) {
                             Text(contact.displayName)

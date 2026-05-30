@@ -78,11 +78,20 @@ struct ChatRowView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Avatar
+            // Avatar — supports custom image
             ZStack(alignment: .bottomTrailing) {
-                Image(systemName: chat.participant.avatarName)
-                    .font(.system(size: 50))
-                    .foregroundStyle(themeManager.accentColor)
+                if let avatarData = chat.participant.avatarData,
+                   let uiImage = UIImage(data: avatarData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 50, height: 50)
+                        .clipShape(Circle())
+                } else {
+                    Image(systemName: chat.participant.avatarName)
+                        .font(.system(size: 50))
+                        .foregroundStyle(themeManager.accentColor)
+                }
                 
                 if themeManager.showOnlineStatus && chat.participant.isOnline {
                     Circle()
@@ -198,9 +207,18 @@ struct NewChatView: View {
                     dismiss()
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: contact.avatarName)
-                            .font(.system(size: 40))
-                            .foregroundStyle(themeManager.accentColor)
+                        if let avatarData = contact.avatarData,
+                           let uiImage = UIImage(data: avatarData) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: contact.avatarName)
+                                .font(.system(size: 40))
+                                .foregroundStyle(themeManager.accentColor)
+                        }
                         
                         VStack(alignment: .leading) {
                             Text(contact.displayName)

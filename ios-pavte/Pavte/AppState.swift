@@ -1,73 +1,166 @@
 import SwiftUI
 import Combine
 
+// MARK: - Account Model
+struct Account: Identifiable, Codable, Equatable {
+    let id: UUID
+    var login: String
+    var password: String
+    var displayName: String
+    var username: String
+    var bio: String
+    var avatarName: String
+    var avatarData: Data?
+    var phoneNumber: String
+    
+    static let predefinedAccounts: [Account] = [
+        Account(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            login: "slehes",
+            password: "12345678",
+            displayName: "slehes",
+            username: "@slehes",
+            bio: "Пользователь Pavte",
+            avatarName: "person.circle.fill",
+            avatarData: nil,
+            phoneNumber: "+7 999 123-45-67"
+        ),
+        Account(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            login: "faxter",
+            password: "12345678",
+            displayName: "faxter",
+            username: "@faxter",
+            bio: "Пользователь Pavte",
+            avatarName: "person.circle.fill",
+            avatarData: nil,
+            phoneNumber: "+7 999 765-43-21"
+        )
+    ]
+}
+
 class AppState: ObservableObject {
     @Published var currentUser: User
     @Published var contacts: [User]
     @Published var chats: [Chat]
     @Published var callHistory: [CallRecord]
-    private var autoChatTimer: Timer?
+    
+    // Auth & accounts
+    @Published var isLoggedIn: Bool = false
+    @Published var currentAccount: Account?
+    @Published var savedAccounts: [Account] = Account.predefinedAccounts
+    @AppStorage("lastLoggedInAccountId") private var lastLoggedInAccountId: String = ""
+    
+    private var favoriteChatId: UUID?
     
     init() {
-        // Initialize current user with simplified default name/number
         let currentUserId = UUID()
         self.currentUser = User(
             id: currentUserId,
             username: "@myusername",
             displayName: "Имя",
-            bio: "Люблю программировать 💻",
+            bio: "Люблю программировать",
             avatarName: "person.circle.fill",
             isOnline: true,
             lastSeen: Date(),
             phoneNumber: "номер можно изменить"
         )
 
-        // Clear contacts and call history per request
         self.contacts = []
 
-        // Create a single auto-chat "Избранное"
+        // Create "Избранное" chat — NO auto-reply timer
         let favoriteUser = User(
             id: UUID(),
             username: "@favorites",
             displayName: "Избранное",
-            bio: "Авто-чат",
+            bio: "",
             avatarName: "star.fill",
-            isOnline: true,
+            isOnline: false,
             lastSeen: Date(),
             phoneNumber: ""
         )
 
-        let favoriteChatId = UUID()
+        let favChatId = UUID()
+        self.favoriteChatId = favChatId
+
         let initialMessages = [
-            Message(id: UUID(), senderId: favoriteUser.id, text: "Привет! Я чат Избранное.", timestamp: Date().addingTimeInterval(-60), isRead: true),
-            Message(id: UUID(), senderId: currentUserId, text: "Тестовый ответ", timestamp: Date().addingTimeInterval(-30), isRead: true)
+            Message(id: UUID(), senderId: currentUserId, text: "Добро пожаловать в Избранное!", timestamp: Date().addingTimeInterval(-30), isRead: true)
         ]
 
-        let favoriteChat = Chat(id: favoriteChatId, participant: favoriteUser, messages: initialMessages, isPinned: false, isMuted: false, unreadCount: 0)
+        let favoriteChat = Chat(id: favChatId, participant: favoriteUser, messages: initialMessages, isPinned: true, isMuted: false, unreadCount: 0)
 
         self.chats = [favoriteChat]
-
-        // Clear call history
         self.callHistory = []
-
-        // Start a timer to append automated incoming messages to the "Избранное" чат
-        self.autoChatTimer = Timer.scheduledTimer(withTimeInterval: 12, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            guard let idx = self.chats.firstIndex(where: { $0.id == favoriteChatId }) else { return }
-            let replies = [
-                "Напоминание: проверить заметки",
-                "Авто-уведомление: всё в порядке",
-                "Тестовое сообщение от Избранного"
-            ]
-            let msg = Message(id: UUID(), senderId: favoriteUser.id, text: replies.randomElement() ?? "Пинг", timestamp: Date(), isRead: false)
-            DispatchQueue.main.async {
-                self.chats[idx].messages.append(msg)
-                self.chats[idx].unreadCount += 1
-            }
+        
+        // Try to restore last logged in account
+        if !lastLoggedInAccountId.isEmpty,
+           let uuid = UUID(uuidString: lastLoggedInAccountId),
+           let account = savedAccounts.first(where: { $0.id == uuid }) {
+            loginAs(account)
         }
     }
     
-    // MARK: - Methods
+    // MARK: - Auth
+    func login(login: String, password: String) -> Bool {
+        if let account = savedAccounts.first(where: { $0.login.lowercased() == login.lowercased() && $0.password == password }) {
+            loginAs(account)
+            return true
+        }
+        return false
+    }
+    
+    func loginAs(_ account: Account) {
+        currentAccount = account
+        isLoggedIn = true
+        lastLoggedInAccountId = account.id.uuidString
+        
+        currentUser = User(
+            id: account.id,
+            username: account.username,
+            displayName: account.displayName,
+            bio: account.bio,
+            avatarName: account.avatarName,
+            avatarData: account.avatarData,
+            isOnline: true,
+            lastSeen: Date(),
+            phoneNumber: account.phoneNumber
+        )
+    }
+    
+    func logout() {
+        // Save current profile changes to account
+        if let account = currentAccount {
+            updateAccountData(account.id)
+        }
+        isLoggedIn = false
+        currentAccount = nil
+        lastLoggedInAccountId = ""
+    }
+    
+    func addAccount(_ account: Account) {
+        if !savedAccounts.contains(where: { $0.login.lowercased() == account.login.lowercased() }) {
+            savedAccounts.append(account)
+        }
+    }
+    
+    func removeAccount(_ account: Account) {
+        savedAccounts.removeAll { $0.id == account.id }
+        if currentAccount?.id == account.id {
+            logout()
+        }
+    }
+    
+    func updateAccountData(_ accountId: UUID) {
+        guard let idx = savedAccounts.firstIndex(where: { $0.id == accountId }) else { return }
+        savedAccounts[idx].displayName = currentUser.displayName
+        savedAccounts[idx].username = currentUser.username
+        savedAccounts[idx].bio = currentUser.bio
+        savedAccounts[idx].avatarName = currentUser.avatarName
+        savedAccounts[idx].avatarData = currentUser.avatarData
+        savedAccounts[idx].phoneNumber = currentUser.phoneNumber
+    }
+    
+    // MARK: - Chat Methods
     func sendMessage(to chatId: UUID, text: String, mediaType: Message.MediaType? = nil, mediaData: Data? = nil) {
         guard let index = chats.firstIndex(where: { $0.id == chatId }) else { return }
         
@@ -107,6 +200,22 @@ class AppState: ObservableObject {
         currentUser.displayName = displayName
         currentUser.bio = bio
         currentUser.username = username
+        // Persist to account
+        if let account = currentAccount {
+            updateAccountData(account.id)
+        }
+    }
+    
+    func updateAvatar(avatarData: Data?) {
+        currentUser.avatarData = avatarData
+        if avatarData != nil {
+            currentUser.avatarName = "custom"
+        } else {
+            currentUser.avatarName = "person.circle.fill"
+        }
+        if let account = currentAccount {
+            updateAccountData(account.id)
+        }
     }
     
     func addCallRecord(participant: User, callType: CallRecord.CallType, isOutgoing: Bool, duration: TimeInterval, isMissed: Bool) {
