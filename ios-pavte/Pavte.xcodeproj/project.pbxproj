@@ -1,381 +1,381 @@
 // !$*UTF8*$!
 {
-	archiveVersion = 1;
-	classes = {
-	};
-	objectVersion = 56;
-	objects = {
+        archiveVersion = 1;
+        classes = {
+        };
+        objectVersion = 56;
+        objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* PavteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
-		A10002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
-		A10003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003; };
-		A10004 /* ChatsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
-		A10005 /* ChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
-		A10006 /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006; };
-		A10007 /* CallsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007; };
-		A10008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008; };
-		A10009 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009; };
-		A10010 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010; };
-		A10011 /* LiquidGlassSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011; };
-		A10012 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
+                A10001 /* PavteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001; };
+                A10002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002; };
+                A10003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003; };
+                A10004 /* ChatsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004; };
+                A10005 /* ChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005; };
+                A10006 /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006; };
+                A10007 /* CallsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007; };
+                A10008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008; };
+                A10009 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009; };
+                A10010 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010; };
+                A10011 /* LiquidGlassSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011; };
+                A10012 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		C10001 /* Pavte.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pavte.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10001 /* PavteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PavteApp.swift; sourceTree = "<group>"; };
-		B10002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B10004 /* ChatsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsListView.swift; sourceTree = "<group>"; };
-		B10005 /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
-		B10006 /* ContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
-		B10007 /* CallsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallsView.swift; sourceTree = "<group>"; };
-		B10008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		B10009 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		B10010 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		B10011 /* LiquidGlassSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassSupport.swift; sourceTree = "<group>"; };
-		B10012 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
-		D10001 /* AccentColor.colorset */ = {isa = PBXFileReference; lastKnownFileType = folder.colorset; path = AccentColor.colorset; sourceTree = "<group>"; };
-		D10002 /* AppIcon.appiconset */ = {isa = PBXFileReference; lastKnownFileType = folder.appiconset; path = AppIcon.appiconset; sourceTree = "<group>"; };
-		D10003 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
-		D10004 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
-		D10005 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
-		D10006 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
+                C10001 /* Pavte.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pavte.app; sourceTree = BUILT_PRODUCTS_DIR; };
+                B10001 /* PavteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PavteApp.swift; sourceTree = "<group>"; };
+                B10002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+                B10003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+                B10004 /* ChatsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsListView.swift; sourceTree = "<group>"; };
+                B10005 /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
+                B10006 /* ContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
+                B10007 /* CallsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallsView.swift; sourceTree = "<group>"; };
+                B10008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+                B10009 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+                B10010 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+                B10011 /* LiquidGlassSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassSupport.swift; sourceTree = "<group>"; };
+                B10012 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+                D10001 /* AccentColor.colorset */ = {isa = PBXFileReference; lastKnownFileType = folder.colorset; path = AccentColor.colorset; sourceTree = "<group>"; };
+                D10002 /* AppIcon.appiconset */ = {isa = PBXFileReference; lastKnownFileType = folder.appiconset; path = AppIcon.appiconset; sourceTree = "<group>"; };
+                D10003 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+                D10004 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+                D10005 /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
+                D10006 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		E10001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+                E10001 /* Frameworks */ = {
+                        isa = PBXFrameworksBuildPhase;
+                        buildActionMask = 2147483647;
+                        files = (
+                        );
+                        runOnlyForDeploymentPostprocessing = 0;
+                };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		F10001 = {
-			isa = PBXGroup;
-			children = (
-				F10002 /* Pavte */,
-				F10010 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		F10002 /* Pavte */ = {
-			isa = PBXGroup;
-			children = (
-				B10001 /* PavteApp.swift */,
-				B10002 /* AppState.swift */,
-				B10003 /* ContentView.swift */,
-				B10004 /* ChatsListView.swift */,
-				B10005 /* ChatDetailView.swift */,
-				B10006 /* ContactsView.swift */,
-				B10007 /* CallsView.swift */,
-				B10008 /* SettingsView.swift */,
-				B10009 /* Models.swift */,
-				B10010 /* ThemeManager.swift */,
-				B10011 /* LiquidGlassSupport.swift */,
-				B10012 /* Item.swift */,
-				F10003 /* Assets.xcassets */,
-			);
-			path = Pavte;
-			sourceTree = "<group>";
-		};
-		F10003 /* Assets.xcassets */ = {
-			isa = PBXGroup;
-			children = (
-				D10003 /* Contents.json */,
-				F10004 /* AccentColor.colorset */,
-				F10005 /* AppIcon.appiconset */,
-			);
-			path = Assets.xcassets;
-			sourceTree = "<group>";
-		};
-		F10004 /* AccentColor.colorset */ = {
-			isa = PBXGroup;
-			children = (
-				D10004 /* Contents.json */,
-			);
-			path = AccentColor.colorset;
-			sourceTree = "<group>";
-		};
-		F10005 /* AppIcon.appiconset */ = {
-			isa = PBXGroup;
-			children = (
-				D10005 /* Contents.json */,
-				D10006 /* icon.png */,
-			);
-			path = AppIcon.appiconset;
-			sourceTree = "<group>";
-		};
-		F10010 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				C10001 /* Pavte.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
+                F10001 = {
+                        isa = PBXGroup;
+                        children = (
+                                F10002 /* Pavte */,
+                                F10010 /* Products */,
+                        );
+                        sourceTree = "<group>";
+                };
+                F10002 /* Pavte */ = {
+                        isa = PBXGroup;
+                        children = (
+                                B10001 /* PavteApp.swift */,
+                                B10002 /* AppState.swift */,
+                                B10003 /* ContentView.swift */,
+                                B10004 /* ChatsListView.swift */,
+                                B10005 /* ChatDetailView.swift */,
+                                B10006 /* ContactsView.swift */,
+                                B10007 /* CallsView.swift */,
+                                B10008 /* SettingsView.swift */,
+                                B10009 /* Models.swift */,
+                                B10010 /* ThemeManager.swift */,
+                                B10011 /* LiquidGlassSupport.swift */,
+                                B10012 /* Item.swift */,
+                                F10003 /* Assets.xcassets */,
+                        );
+                        path = Pavte;
+                        sourceTree = "<group>";
+                };
+                F10003 /* Assets.xcassets */ = {
+                        isa = PBXGroup;
+                        children = (
+                                D10003 /* Contents.json */,
+                                F10004 /* AccentColor.colorset */,
+                                F10005 /* AppIcon.appiconset */,
+                        );
+                        path = Assets.xcassets;
+                        sourceTree = "<group>";
+                };
+                F10004 /* AccentColor.colorset */ = {
+                        isa = PBXGroup;
+                        children = (
+                                D10004 /* Contents.json */,
+                        );
+                        path = AccentColor.colorset;
+                        sourceTree = "<group>";
+                };
+                F10005 /* AppIcon.appiconset */ = {
+                        isa = PBXGroup;
+                        children = (
+                                D10005 /* Contents.json */,
+                                D10006 /* icon.png */,
+                        );
+                        path = AppIcon.appiconset;
+                        sourceTree = "<group>";
+                };
+                F10010 /* Products */ = {
+                        isa = PBXGroup;
+                        children = (
+                                C10001 /* Pavte.app */,
+                        );
+                        name = Products;
+                        sourceTree = "<group>";
+                };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		G10001 /* Pavte */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = H10003 /* Build configuration list for PBXNativeTarget "Pavte" */;
-			buildPhases = (
-				G10002 /* Sources */,
-				E10001 /* Frameworks */,
-				G10003 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = Pavte;
-			productName = Pavte;
-			productReference = C10001 /* Pavte.app */;
-			productType = "com.apple.product-type.application";
-		};
+                G10001 /* Pavte */ = {
+                        isa = PBXNativeTarget;
+                        buildConfigurationList = H10003 /* Build configuration list for PBXNativeTarget "Pavte" */;
+                        buildPhases = (
+                                G10002 /* Sources */,
+                                E10001 /* Frameworks */,
+                                G10003 /* Resources */,
+                        );
+                        buildRules = (
+                        );
+                        dependencies = (
+                        );
+                        name = Pavte;
+                        productName = Pavte;
+                        productReference = C10001 /* Pavte.app */;
+                        productType = "com.apple.product-type.application";
+                };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		G10010 /* Project object */ = {
-			isa = PBXProject;
-			attributes = {
-				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-					G10001 = {
-						CreatedOnToolsVersion = 16.0;
-					};
-				};
-			};
-			buildConfigurationList = H10001 /* Build configuration list for PBXProject "Pavte" */;
-			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = ru;
-			hasScannedForEncodings = 0;
-			knownRegions = (
-				ru,
-				Base,
-			);
-			mainGroup = F10001;
-			productRefGroup = F10010 /* Products */;
-			projectDirPath = "";
-			projectRoot = "";
-			targets = (
-				G10001 /* Pavte */,
-			);
-		};
+                G10010 /* Project object */ = {
+                        isa = PBXProject;
+                        attributes = {
+                                BuildIndependentTargetsInParallel = 1;
+                                LastSwiftUpdateCheck = 1600;
+                                LastUpgradeCheck = 1600;
+                                TargetAttributes = {
+                                        G10001 = {
+                                                CreatedOnToolsVersion = 16.0;
+                                        };
+                                };
+                        };
+                        buildConfigurationList = H10001 /* Build configuration list for PBXProject "Pavte" */;
+                        compatibilityVersion = "Xcode 14.0";
+                        developmentRegion = ru;
+                        hasScannedForEncodings = 0;
+                        knownRegions = (
+                                ru,
+                                Base,
+                        );
+                        mainGroup = F10001;
+                        productRefGroup = F10010 /* Products */;
+                        projectDirPath = "";
+                        projectRoot = "";
+                        targets = (
+                                G10001 /* Pavte */,
+                        );
+                };
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		G10003 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+                G10003 /* Resources */ = {
+                        isa = PBXResourcesBuildPhase;
+                        buildActionMask = 2147483647;
+                        files = (
+                        );
+                        runOnlyForDeploymentPostprocessing = 0;
+                };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		G10002 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A10001 /* PavteApp.swift in Sources */,
-				A10002 /* AppState.swift in Sources */,
-				A10003 /* ContentView.swift in Sources */,
-				A10004 /* ChatsListView.swift in Sources */,
-				A10005 /* ChatDetailView.swift in Sources */,
-				A10006 /* ContactsView.swift in Sources */,
-				A10007 /* CallsView.swift in Sources */,
-				A10008 /* SettingsView.swift in Sources */,
-				A10009 /* Models.swift in Sources */,
-				A10010 /* ThemeManager.swift in Sources */,
-				A10011 /* LiquidGlassSupport.swift in Sources */,
-				A10012 /* Item.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+                G10002 /* Sources */ = {
+                        isa = PBXSourcesBuildPhase;
+                        buildActionMask = 2147483647;
+                        files = (
+                                A10001 /* PavteApp.swift in Sources */,
+                                A10002 /* AppState.swift in Sources */,
+                                A10003 /* ContentView.swift in Sources */,
+                                A10004 /* ChatsListView.swift in Sources */,
+                                A10005 /* ChatDetailView.swift in Sources */,
+                                A10006 /* ContactsView.swift in Sources */,
+                                A10007 /* CallsView.swift in Sources */,
+                                A10008 /* SettingsView.swift in Sources */,
+                                A10009 /* Models.swift in Sources */,
+                                A10010 /* ThemeManager.swift in Sources */,
+                                A10011 /* LiquidGlassSupport.swift in Sources */,
+                                A10012 /* Item.swift in Sources */,
+                        );
+                        runOnlyForDeploymentPostprocessing = 0;
+                };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		I10001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		I10002 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		I10003 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Pavte;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pavte.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		I10004 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Pavte;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pavte.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
+                I10001 /* Debug */ = {
+                        isa = XCBuildConfiguration;
+                        buildSettings = {
+                                ALWAYS_SEARCH_USER_PATHS = NO;
+                                ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+                                CLANG_ANALYZER_NONNULL = YES;
+                                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                                CLANG_ENABLE_MODULES = YES;
+                                CLANG_ENABLE_OBJC_ARC = YES;
+                                COPY_PHASE_STRIP = NO;
+                                DEBUG_INFORMATION_FORMAT = dwarf;
+                                ENABLE_STRICT_OBJC_MSGSEND = YES;
+                                ENABLE_TESTABILITY = YES;
+                                ENABLE_USER_SCRIPT_SANDBOXING = YES;
+                                GCC_DYNAMIC_NO_PIC = NO;
+                                GCC_OPTIMIZATION_LEVEL = 0;
+                                GCC_PREPROCESSOR_DEFINITIONS = (
+                                        "DEBUG=1",
+                                        "$(inherited)",
+                                );
+                                GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+                                GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+                                IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+                                MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+                                ONLY_ACTIVE_ARCH = YES;
+                                SDKROOT = iphoneos;
+                                SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+                                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+                        };
+                        name = Debug;
+                };
+                I10002 /* Release */ = {
+                        isa = XCBuildConfiguration;
+                        buildSettings = {
+                                ALWAYS_SEARCH_USER_PATHS = NO;
+                                ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+                                CLANG_ANALYZER_NONNULL = YES;
+                                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                                CLANG_ENABLE_MODULES = YES;
+                                CLANG_ENABLE_OBJC_ARC = YES;
+                                COPY_PHASE_STRIP = NO;
+                                DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+                                ENABLE_NS_ASSERTIONS = NO;
+                                ENABLE_STRICT_OBJC_MSGSEND = YES;
+                                ENABLE_USER_SCRIPT_SANDBOXING = YES;
+                                GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+                                GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+                                IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+                                MTL_ENABLE_DEBUG_INFO = NO;
+                                SDKROOT = iphoneos;
+                                SWIFT_COMPILATION_MODE = wholemodule;
+                                VALIDATE_PRODUCT = YES;
+                        };
+                        name = Release;
+                };
+                I10003 /* Debug */ = {
+                        isa = XCBuildConfiguration;
+                        buildSettings = {
+                                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+                                ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+                                CODE_SIGN_STYLE = Automatic;
+                                CURRENT_PROJECT_VERSION = 1;
+                                GENERATE_INFOPLIST_FILE = YES;
+                                INFOPLIST_KEY_CFBundleDisplayName = Pavte;
+                                INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+                                INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+                                INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+                                IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+                                LD_RUNPATH_SEARCH_PATHS = (
+                                        "$(inherited)",
+                                        "@executable_path/Frameworks",
+                                );
+                                MARKETING_VERSION = 1.0.4;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.pavte.app;
+                                PRODUCT_NAME = "$(TARGET_NAME)";
+                                SWIFT_EMIT_LOC_STRINGS = YES;
+                                SWIFT_VERSION = 6.0;
+                                TARGETED_DEVICE_FAMILY = "1,2";
+                        };
+                        name = Debug;
+                };
+                I10004 /* Release */ = {
+                        isa = XCBuildConfiguration;
+                        buildSettings = {
+                                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+                                ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+                                CODE_SIGN_STYLE = Automatic;
+                                CURRENT_PROJECT_VERSION = 1;
+                                GENERATE_INFOPLIST_FILE = YES;
+                                INFOPLIST_KEY_CFBundleDisplayName = Pavte;
+                                INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+                                INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+                                INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+                                IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+                                LD_RUNPATH_SEARCH_PATHS = (
+                                        "$(inherited)",
+                                        "@executable_path/Frameworks",
+                                );
+                                MARKETING_VERSION = 1.0.4;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.pavte.app;
+                                PRODUCT_NAME = "$(TARGET_NAME)";
+                                SWIFT_EMIT_LOC_STRINGS = YES;
+                                SWIFT_VERSION = 6.0;
+                                TARGETED_DEVICE_FAMILY = "1,2";
+                        };
+                        name = Release;
+                };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		H10001 /* Build configuration list for PBXProject "Pavte" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				I10001 /* Debug */,
-				I10002 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		H10003 /* Build configuration list for PBXNativeTarget "Pavte" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				I10003 /* Debug */,
-				I10004 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
+                H10001 /* Build configuration list for PBXProject "Pavte" */ = {
+                        isa = XCConfigurationList;
+                        buildConfigurations = (
+                                I10001 /* Debug */,
+                                I10002 /* Release */,
+                        );
+                        defaultConfigurationIsVisible = 0;
+                        defaultConfigurationName = Release;
+                };
+                H10003 /* Build configuration list for PBXNativeTarget "Pavte" */ = {
+                        isa = XCConfigurationList;
+                        buildConfigurations = (
+                                I10003 /* Debug */,
+                                I10004 /* Release */,
+                        );
+                        defaultConfigurationIsVisible = 0;
+                        defaultConfigurationName = Release;
+                };
 /* End XCConfigurationList section */
 
 /* Begin XCScheme section */
-		J10001 /* Pavte */ = {
-			isa = XCScheme;
-			buildAction = J10002;
-			testAction = J10003;
-			launchAction = J10004;
-			profileAction = J10005;
-			analyzeAction = J10006;
-			archiveAction = J10007;
-		};
-		J10002 /* BuildAction */ = {
-			isa = XCBuildAction;
-			buildConfiguration = Debug;
-		};
-		J10003 /* TestAction */ = {
-			isa = XCTestAction;
-			buildConfiguration = Debug;
-		};
-		J10004 /* LaunchAction */ = {
-			isa = XCLaunchAction;
-			buildConfiguration = Debug;
-			runnable = J10008;
-		};
-		J10005 /* ProfileAction */ = {
-			isa = XCProfileAction;
-			buildConfiguration = Release;
-		};
-		J10006 /* AnalyzeAction */ = {
-			isa = XCAnalyzeAction;
-			buildConfiguration = Debug;
-		};
-		J10007 /* ArchiveAction */ = {
-			isa = XCArchiveAction;
-			buildConfiguration = Release;
-			revealArchiveInOrganizer = YES;
-		};
-		J10008 /* Runnable */ = {
-			isa = XCBuildOnlyRunnable;
-		};
+                J10001 /* Pavte */ = {
+                        isa = XCScheme;
+                        buildAction = J10002;
+                        testAction = J10003;
+                        launchAction = J10004;
+                        profileAction = J10005;
+                        analyzeAction = J10006;
+                        archiveAction = J10007;
+                };
+                J10002 /* BuildAction */ = {
+                        isa = XCBuildAction;
+                        buildConfiguration = Debug;
+                };
+                J10003 /* TestAction */ = {
+                        isa = XCTestAction;
+                        buildConfiguration = Debug;
+                };
+                J10004 /* LaunchAction */ = {
+                        isa = XCLaunchAction;
+                        buildConfiguration = Debug;
+                        runnable = J10008;
+                };
+                J10005 /* ProfileAction */ = {
+                        isa = XCProfileAction;
+                        buildConfiguration = Release;
+                };
+                J10006 /* AnalyzeAction */ = {
+                        isa = XCAnalyzeAction;
+                        buildConfiguration = Debug;
+                };
+                J10007 /* ArchiveAction */ = {
+                        isa = XCArchiveAction;
+                        buildConfiguration = Release;
+                        revealArchiveInOrganizer = YES;
+                };
+                J10008 /* Runnable */ = {
+                        isa = XCBuildOnlyRunnable;
+                };
 /* End XCScheme section */
 
-	};
-	rootObject = G10010 /* Project object */;
+        };
+        rootObject = G10010 /* Project object */;
 }

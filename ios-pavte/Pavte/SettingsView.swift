@@ -147,14 +147,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showAccountSwitcher) {
             AccountSwitcherView()
         }
-        .background(
-            NavigationLink(
-                destination: ChatDetailView(chat: appState.openSupportChat()),
-                isActive: $navigateToSupportChat,
-                label: { EmptyView() }
-            )
-            .hidden()
-        )
+        .navigationDestination(isPresented: $navigateToSupportChat) {
+            ChatDetailView(chat: appState.openSupportChat())
+        }
     }
 }
 
