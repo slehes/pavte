@@ -5,6 +5,7 @@ struct ChatsListView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var searchText = ""
     @State private var showNewChat = false
+    @Binding var showAIChat: Bool
     
     var sortedChats: [Chat] {
         let filtered = searchText.isEmpty ? appState.chats : appState.chats.filter {
@@ -110,7 +111,7 @@ struct ChatsListView: View {
                         }
                     }
                 } else {
-                    // Normal chat list — compact rows
+                    // Normal chat list — Telegram-like compact rows
                     ForEach(sortedChats) { chat in
                         NavigationLink(destination: ChatDetailView(chat: chat)) {
                             ChatRowView(chat: chat)
@@ -146,13 +147,33 @@ struct ChatsListView: View {
             .navigationTitle("Чаты")
             .searchable(text: $searchText, prompt: "Поиск по юзернейму или чату")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showAIChat = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.purple, Color.indigo],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 30, height: 30)
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
                         Button {
                             simulateIncomingMessage()
                         } label: {
                             Image(systemName: "bell.badge.fill")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.gray)
                         }
                         
                         Button {
@@ -176,7 +197,7 @@ struct ChatsListView: View {
             id: UUID(uuidString: "22222222-2222-2222-2222-222222222222") ?? UUID(),
             username: "@faxter",
             displayName: "faxter",
-            bio: "Пользователь Pavte",
+            bio: "",
             avatarName: "person.circle.fill",
             isOnline: true,
             lastSeen: Date(),
@@ -185,6 +206,9 @@ struct ChatsListView: View {
         )
         
         let chat = appState.getOrCreateChat(with: faxterUser)
+        
+        // First show typing indicator
+        appState.simulateTyping(chatId: chat.id)
         
         let messages = [
             "Привет! Как дела?",
@@ -197,14 +221,18 @@ struct ChatsListView: View {
             "Ладно, договорились 👍"
         ]
         
-        appState.receiveMessage(
-            from: faxterUser,
-            chatId: chat.id,
-            text: messages.randomElement() ?? "Привет!"
-        )
+        // Then send the message after typing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [self] in
+            appState.receiveMessage(
+                from: faxterUser,
+                chatId: chat.id,
+                text: messages.randomElement() ?? "Привет!"
+            )
+        }
     }
 }
 
+// MARK: - Chat Row View (Telegram-like with blue dot for unread)
 struct ChatRowView: View {
     let chat: Chat
     @EnvironmentObject var themeManager: ThemeManager
@@ -212,51 +240,64 @@ struct ChatRowView: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            // Smaller avatar — compact chat list
+            // Avatar with online indicator (compact — reduced size by half)
             ZStack(alignment: .bottomTrailing) {
                 if let avatarData = chat.displayAvatarData,
                    let uiImage = UIImage(data: avatarData) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                         .clipShape(Circle())
                 } else {
                     Image(systemName: chat.displayAvatar)
-                        .font(.system(size: 44))
+                        .font(.system(size: 40))
                         .foregroundStyle(themeManager.accentColor)
                 }
                 
+                // Online indicator
                 if themeManager.showOnlineStatus && chat.participant.isOnline && chat.chatType == .personal {
                     Circle()
                         .fill(.green)
-                        .frame(width: 12, height: 12)
+                        .frame(width: 9, height: 9)
                         .overlay(
                             Circle()
-                                .stroke(Color(.systemBackground), lineWidth: 2)
+                                .stroke(Color(.systemBackground), lineWidth: 1.5)
                         )
                 }
                 
+                // Chat type badge
                 if chat.chatType == .group {
                     Image(systemName: "person.3.fill")
-                        .font(.system(size: 7))
+                        .font(.system(size: 6))
                         .foregroundStyle(.white)
-                        .padding(2)
+                        .padding(1.5)
                         .background(Circle().fill(themeManager.accentColor))
                 } else if chat.chatType == .channel {
                     Image(systemName: "megaphone.fill")
-                        .font(.system(size: 7))
+                        .font(.system(size: 6))
                         .foregroundStyle(.white)
-                        .padding(2)
+                        .padding(1.5)
                         .background(Circle().fill(themeManager.accentColor))
                 }
             }
             
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
+            // Chat content
+            VStack(alignment: .leading, spacing: 2) {
+                // First row: name + time
+                HStack(alignment: .firstTextBaseline) {
+                    // Blue dot for unread messages
+                    if chat.unreadCount > 0 {
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 8, height: 8)
+                    }
+                    
                     Text(chat.displayName)
                         .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .fontWeight(chat.unreadCount > 0 ? .semibold : .regular)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
                     
                     if chat.isPinned {
                         Image(systemName: "pin.fill")
@@ -275,11 +316,12 @@ struct ChatRowView: View {
                     if let timestamp = chat.lastMessage?.timestamp {
                         Text(formatTimestamp(timestamp))
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(chat.unreadCount > 0 ? Color.blue : .secondary)
                     }
                 }
                 
-                HStack {
+                // Second row: last message + unread badge / read receipts
+                HStack(alignment: .center) {
                     Text(chat.lastMessagePreview)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -288,19 +330,33 @@ struct ChatRowView: View {
                     Spacer()
                     
                     if chat.unreadCount > 0 {
+                        // New message indicator: blue badge with count
                         Text("\(chat.unreadCount)")
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.blue)
-                            .clipShape(Circle())
+                            .background(Capsule().fill(Color.blue))
                     } else if let lastMessage = chat.lastMessage,
                               lastMessage.senderId == appState.currentUser.id {
-                        Image(systemName: lastMessage.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.caption2)
-                            .foregroundStyle(lastMessage.isRead ? themeManager.accentColor : .gray)
+                        // Read receipts in chat list
+                        if lastMessage.isRead {
+                            // 1 blue checkmark = read
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.blue)
+                        } else {
+                            // 2 gray checkmarks = sent not read
+                            HStack(spacing: -4) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.gray.opacity(0.6))
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.gray.opacity(0.6))
+                            }
+                        }
                     }
                 }
             }
@@ -434,7 +490,7 @@ struct NewChatView: View {
 }
 
 #Preview {
-    ChatsListView()
+    ChatsListView(showAIChat: .constant(false))
         .environmentObject(AppState())
         .environmentObject(ThemeManager())
 }
