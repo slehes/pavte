@@ -62,7 +62,7 @@ struct OnboardingView: View {
             features: [
                 OnboardingFeature(icon: "person.3.fill", title: "Создайте группу", description: "Контакты → Создать группу — добавьте участников и установите аватарку"),
                 OnboardingFeature(icon: "megaphone.fill", title: "Создайте канал", description: "Контакты → Создать канал — публикуйте сообщения для подписчиков"),
-                OnboardingFeature(icon: "headphones.circle.fill", title: "Поддержка", description: "Нужна помощь? Настройки → Связаться с поддержкой — чат с @slehes")
+                OnboardingFeature(icon: "headphones.circle.fill", title: "Поддержка", description: "Настройки → Связаться с @slehes — чат с разработчиком")
             ]
         )
     ]

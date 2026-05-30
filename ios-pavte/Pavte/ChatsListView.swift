@@ -45,22 +45,19 @@ struct ChatsListView: View {
                     if !searchResults.isEmpty {
                         Section("Найденные пользователи") {
                             ForEach(searchResults) { user in
-                                Button {
-                                    let chat = appState.getOrCreateChat(with: user)
-                                    searchText = ""
-                                    // Navigate handled by NavigationLink
-                                } label: {
+                                NavigationLink(destination: ChatDetailView(chat: appState.getOrCreateChat(with: user))) {
                                     HStack(spacing: 12) {
+                                        // Smaller avatar
                                         if let avatarData = user.avatarData,
                                            let uiImage = UIImage(data: avatarData) {
                                             Image(uiImage: uiImage)
                                                 .resizable()
                                                 .scaledToFit()
-                                                .frame(width: 44, height: 44)
+                                                .frame(width: 40, height: 40)
                                                 .clipShape(Circle())
                                         } else {
                                             Image(systemName: user.avatarName)
-                                                .font(.system(size: 44))
+                                                .font(.system(size: 40))
                                                 .foregroundStyle(themeManager.accentColor)
                                         }
                                         
@@ -113,7 +110,7 @@ struct ChatsListView: View {
                         }
                     }
                 } else {
-                    // Normal chat list
+                    // Normal chat list — compact rows
                     ForEach(sortedChats) { chat in
                         NavigationLink(destination: ChatDetailView(chat: chat)) {
                             ChatRowView(chat: chat)
@@ -129,7 +126,7 @@ struct ChatsListView: View {
                         }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
-                                // Delete chat
+                                appState.leaveChat(chatId: chat.id)
                             } label: {
                                 Label("Удалить", systemImage: "trash")
                             }
@@ -170,62 +167,62 @@ struct ChatRowView: View {
     @EnvironmentObject var appState: AppState
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Avatar — supports custom image, groups, channels
+        HStack(spacing: 10) {
+            // Smaller avatar — compact chat list
             ZStack(alignment: .bottomTrailing) {
                 if let avatarData = chat.displayAvatarData,
                    let uiImage = UIImage(data: avatarData) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 50, height: 50)
+                        .frame(width: 44, height: 44)
                         .clipShape(Circle())
                 } else {
                     Image(systemName: chat.displayAvatar)
-                        .font(.system(size: 50))
+                        .font(.system(size: 44))
                         .foregroundStyle(themeManager.accentColor)
                 }
                 
                 if themeManager.showOnlineStatus && chat.participant.isOnline && chat.chatType == .personal {
                     Circle()
                         .fill(.green)
-                        .frame(width: 14, height: 14)
+                        .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
                                 .stroke(Color(.systemBackground), lineWidth: 2)
                         )
                 }
                 
-                // Group/Channel badge
                 if chat.chatType == .group {
                     Image(systemName: "person.3.fill")
-                        .font(.system(size: 8))
+                        .font(.system(size: 7))
                         .foregroundStyle(.white)
-                        .padding(3)
+                        .padding(2)
                         .background(Circle().fill(themeManager.accentColor))
                 } else if chat.chatType == .channel {
                     Image(systemName: "megaphone.fill")
-                        .font(.system(size: 8))
+                        .font(.system(size: 7))
                         .foregroundStyle(.white)
-                        .padding(3)
+                        .padding(2)
                         .background(Circle().fill(themeManager.accentColor))
                 }
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack {
                     Text(chat.displayName)
-                        .font(.headline)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                     
                     if chat.isPinned {
                         Image(systemName: "pin.fill")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.orange)
                     }
                     
                     if chat.isMuted {
                         Image(systemName: "bell.slash.fill")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.gray)
                     }
                     
@@ -233,14 +230,14 @@ struct ChatRowView: View {
                     
                     if let timestamp = chat.lastMessage?.timestamp {
                         Text(formatTimestamp(timestamp))
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }
                 
                 HStack {
                     Text(chat.lastMessagePreview)
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     
@@ -251,20 +248,20 @@ struct ChatRowView: View {
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
                             .background(chat.isMuted ? Color.gray : themeManager.accentColor)
                             .clipShape(Capsule())
                     } else if let lastMessage = chat.lastMessage,
                               lastMessage.senderId == appState.currentUser.id {
                         Image(systemName: lastMessage.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(lastMessage.isRead ? themeManager.accentColor : .gray)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
     
     private func formatTimestamp(_ date: Date) -> String {
@@ -305,7 +302,6 @@ struct NewChatView: View {
         }
     }
     
-    /// Also search in global user directory
     var globalSearchResults: [User] {
         guard !searchText.isEmpty else { return [] }
         return appState.searchUsers(query: searchText)
@@ -314,14 +310,10 @@ struct NewChatView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Global search results (search by username)
                 if !searchText.isEmpty && !globalSearchResults.isEmpty {
-                    Section("Найдено в каталоге") {
+                    Section("Найдено по юзернейму") {
                         ForEach(globalSearchResults) { user in
-                            Button {
-                                _ = appState.getOrCreateChat(with: user)
-                                dismiss()
-                            } label: {
+                            NavigationLink(destination: ChatDetailView(chat: appState.getOrCreateChat(with: user))) {
                                 HStack(spacing: 12) {
                                     if let avatarData = user.avatarData,
                                        let uiImage = UIImage(data: avatarData) {
@@ -350,7 +342,6 @@ struct NewChatView: View {
                     }
                 }
                 
-                // Contacts
                 Section("Контакты") {
                     ForEach(filteredContacts) { contact in
                         Button {

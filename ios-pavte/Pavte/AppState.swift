@@ -12,6 +12,12 @@ struct Account: Identifiable, Codable, Equatable {
     var avatarName: String
     var avatarData: Data?
     var phoneNumber: String
+    // Video background for avatar area
+    var avatarVideoBackgroundData: Data?
+    // Passcode & 2FA
+    var passcode: String?
+    var is2FAEnabled: Bool
+    var twoFASecret: String?
     
     static let predefinedAccounts: [Account] = [
         Account(
@@ -23,7 +29,11 @@ struct Account: Identifiable, Codable, Equatable {
             bio: "Пользователь Pavte",
             avatarName: "person.circle.fill",
             avatarData: nil,
-            phoneNumber: "+7 999 123-45-67"
+            phoneNumber: "+7 999 123-45-67",
+            avatarVideoBackgroundData: nil,
+            passcode: nil,
+            is2FAEnabled: false,
+            twoFASecret: nil
         ),
         Account(
             id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
@@ -34,7 +44,11 @@ struct Account: Identifiable, Codable, Equatable {
             bio: "Пользователь Pavte",
             avatarName: "person.circle.fill",
             avatarData: nil,
-            phoneNumber: "+7 999 765-43-21"
+            phoneNumber: "+7 999 765-43-21",
+            avatarVideoBackgroundData: nil,
+            passcode: nil,
+            is2FAEnabled: false,
+            twoFASecret: nil
         )
     ]
 }
@@ -54,8 +68,17 @@ class AppState: ObservableObject {
     // Global user directory (for search)
     @Published var globalUsers: [User] = []
     
+    // Passcode lock
+    @Published var isPasscodeRequired: Bool = false
+    @Published var isPasscodeUnlocked: Bool = true // Start unlocked, will check on appear
+    @AppStorage("appPasscode") private var appPasscode: String = ""
+    @AppStorage("isPasscodeEnabled") private var isPasscodeEnabled: Bool = false
+    
+    // Active sessions
+    @Published var activeSessions: [ActiveSession] = []
+    
     // App version
-    static let appVersion = "1.0.2"
+    static let appVersion = "1.0.3"
     
     private var favoriteChatId: UUID?
     
@@ -109,12 +132,94 @@ class AppState: ObservableObject {
             )
         }
         
+        // Active sessions
+        self.activeSessions = ActiveSession.mockSessions(appVersion: AppState.appVersion)
+        
+        // Check passcode lock
+        checkPasscodeLock()
+        
         // Try to restore last logged in account
         if !lastLoggedInAccountId.isEmpty,
            let uuid = UUID(uuidString: lastLoggedInAccountId),
            let account = savedAccounts.first(where: { $0.id == uuid }) {
             loginAs(account)
         }
+    }
+    
+    // MARK: - Passcode Lock
+    private func checkPasscodeLock() {
+        if isPasscodeEnabled && !appPasscode.isEmpty {
+            isPasscodeRequired = true
+            isPasscodeUnlocked = false
+        } else {
+            isPasscodeRequired = false
+            isPasscodeUnlocked = true
+        }
+    }
+    
+    func setPasscode(_ code: String) {
+        appPasscode = code
+        isPasscodeEnabled = !code.isEmpty
+        isPasscodeRequired = !code.isEmpty
+        isPasscodeUnlocked = code.isEmpty
+        // Save to account
+        if let account = currentAccount {
+            updateAccountPasscode(account.id, passcode: code)
+        }
+    }
+    
+    func removePasscode() {
+        appPasscode = ""
+        isPasscodeEnabled = false
+        isPasscodeRequired = false
+        isPasscodeUnlocked = true
+        if let account = currentAccount {
+            updateAccountPasscode(account.id, passcode: nil)
+        }
+    }
+    
+    func verifyPasscode(_ code: String) -> Bool {
+        if code == appPasscode {
+            isPasscodeUnlocked = true
+            return true
+        }
+        return false
+    }
+    
+    private func updateAccountPasscode(_ accountId: UUID, passcode: String?) {
+        guard let idx = savedAccounts.firstIndex(where: { $0.id == accountId }) else { return }
+        savedAccounts[idx].passcode = passcode
+    }
+    
+    // MARK: - 2FA
+    func enable2FA() -> String {
+        // Generate a 6-digit secret for demo
+        let secret = String(format: "%06d", Int.random(in: 100000...999999))
+        if let account = currentAccount {
+            guard let idx = savedAccounts.firstIndex(where: { $0.id == account.id }) else { return secret }
+            savedAccounts[idx].is2FAEnabled = true
+            savedAccounts[idx].twoFASecret = secret
+        }
+        return secret
+    }
+    
+    func disable2FA() {
+        if let account = currentAccount {
+            guard let idx = savedAccounts.firstIndex(where: { $0.id == account.id }) else { return }
+            savedAccounts[idx].is2FAEnabled = false
+            savedAccounts[idx].twoFASecret = nil
+        }
+    }
+    
+    var is2FAEnabledForCurrentAccount: Bool {
+        guard let account = currentAccount else { return false }
+        return savedAccounts.first(where: { $0.id == account.id })?.is2FAEnabled ?? false
+    }
+    
+    func verify2FA(_ code: String) -> Bool {
+        guard let account = currentAccount else { return false }
+        let secret = savedAccounts.first(where: { $0.id == account.id })?.twoFASecret ?? ""
+        return code == secret
     }
     
     // MARK: - Auth
@@ -127,6 +232,11 @@ class AppState: ObservableObject {
     }
     
     func loginAs(_ account: Account) {
+        // Save current profile changes before switching
+        if let current = currentAccount {
+            updateAccountData(current.id)
+        }
+        
         currentAccount = account
         isLoggedIn = true
         lastLoggedInAccountId = account.id.uuidString
@@ -140,8 +250,19 @@ class AppState: ObservableObject {
             avatarData: account.avatarData,
             isOnline: true,
             lastSeen: Date(),
-            phoneNumber: account.phoneNumber
+            phoneNumber: account.phoneNumber,
+            avatarVideoBackgroundData: account.avatarVideoBackgroundData
         )
+        
+        // Restore passcode for this account
+        if let passcode = account.passcode, !passcode.isEmpty {
+            appPasscode = passcode
+            isPasscodeEnabled = true
+        } else {
+            appPasscode = ""
+            isPasscodeEnabled = false
+        }
+        checkPasscodeLock()
     }
     
     func logout() {
@@ -152,6 +273,7 @@ class AppState: ObservableObject {
         isLoggedIn = false
         currentAccount = nil
         lastLoggedInAccountId = ""
+        isPasscodeUnlocked = true
     }
     
     func addAccount(_ account: Account) {
@@ -190,17 +312,20 @@ class AppState: ObservableObject {
         savedAccounts[idx].avatarName = currentUser.avatarName
         savedAccounts[idx].avatarData = currentUser.avatarData
         savedAccounts[idx].phoneNumber = currentUser.phoneNumber
+        savedAccounts[idx].avatarVideoBackgroundData = currentUser.avatarVideoBackgroundData
     }
     
     // MARK: - Search
     func searchUsers(query: String) -> [User] {
         guard !query.isEmpty else { return [] }
         let lowerQuery = query.lowercased()
-        // Remove current user from results
+        // Remove @ prefix if present for matching
+        let cleanQuery = lowerQuery.hasPrefix("@") ? String(lowerQuery.dropFirst()) : lowerQuery
         return globalUsers.filter { user in
             user.id != currentUser.id &&
             (user.displayName.lowercased().contains(lowerQuery) ||
-             user.username.lowercased().contains(lowerQuery))
+             user.username.lowercased().contains(lowerQuery) ||
+             user.username.lowercased().contains(cleanQuery))
         }
     }
     
@@ -214,18 +339,24 @@ class AppState: ObservableObject {
         }
     }
     
-    // MARK: - Support Chat
+    // MARK: - Support Chat — opens chat with @slehes by username
     func openSupportChat() -> Chat {
-        let supportUser = User(
-            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
-            username: "@slehes",
-            displayName: "Поддержка Pavte",
-            bio: "Официальная поддержка мессенджера Pavte",
-            avatarName: "headphones.circle.fill",
-            isOnline: true,
-            lastSeen: Date(),
-            phoneNumber: ""
-        )
+        // Find @slehes user from global directory
+        let supportUser: User
+        if let existing = globalUsers.first(where: { $0.username == "@slehes" }) {
+            supportUser = existing
+        } else {
+            supportUser = User(
+                id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+                username: "@slehes",
+                displayName: "slehes",
+                bio: "Разработчик Pavte",
+                avatarName: "person.circle.fill",
+                isOnline: true,
+                lastSeen: Date(),
+                phoneNumber: ""
+            )
+        }
         return getOrCreateChat(with: supportUser)
     }
     
@@ -245,7 +376,35 @@ class AppState: ObservableObject {
         )
         
         chats[index].messages.append(newMessage)
-        // NO auto-reply — messages are truly sent
+    }
+    
+    // MARK: - Message Actions
+    func deleteMessageForMe(chatId: UUID, messageId: UUID) {
+        guard let chatIdx = chats.firstIndex(where: { $0.id == chatId }),
+              let msgIdx = chats[chatIdx].messages.firstIndex(where: { $0.id == messageId }) else { return }
+        chats[chatIdx].messages[msgIdx].isDeletedForMe = true
+    }
+    
+    func deleteMessageForEveryone(chatId: UUID, messageId: UUID) {
+        guard let chatIdx = chats.firstIndex(where: { $0.id == chatId }),
+              let msgIdx = chats[chatIdx].messages.firstIndex(where: { $0.id == messageId }) else { return }
+        chats[chatIdx].messages[msgIdx].isDeletedForEveryone = true
+        // Anonymous — no trace left, message simply disappears
+    }
+    
+    func editMessage(chatId: UUID, messageId: UUID, newText: String) {
+        guard let chatIdx = chats.firstIndex(where: { $0.id == chatId }),
+              let msgIdx = chats[chatIdx].messages.firstIndex(where: { $0.id == messageId }) else { return }
+        let original = chats[chatIdx].messages[msgIdx].text
+        chats[chatIdx].messages[msgIdx].originalText = original
+        chats[chatIdx].messages[msgIdx].text = newText
+        chats[chatIdx].messages[msgIdx].isEdited = true
+    }
+    
+    func togglePinMessage(chatId: UUID, messageId: UUID) {
+        guard let chatIdx = chats.firstIndex(where: { $0.id == chatId }),
+              let msgIdx = chats[chatIdx].messages.firstIndex(where: { $0.id == messageId }) else { return }
+        chats[chatIdx].messages[msgIdx].isPinned.toggle()
     }
     
     func markAsRead(chatId: UUID) {
@@ -274,6 +433,12 @@ class AppState: ObservableObject {
         if let account = currentAccount {
             updateAccountData(account.id)
         }
+        // Update in global directory
+        if let idx = globalUsers.firstIndex(where: { $0.id == currentUser.id }) {
+            globalUsers[idx].displayName = displayName
+            globalUsers[idx].bio = bio
+            globalUsers[idx].username = username
+        }
     }
     
     func updateAvatar(avatarData: Data?) {
@@ -283,6 +448,18 @@ class AppState: ObservableObject {
         } else {
             currentUser.avatarName = "person.circle.fill"
         }
+        if let account = currentAccount {
+            updateAccountData(account.id)
+        }
+        // Update in global directory
+        if let idx = globalUsers.firstIndex(where: { $0.id == currentUser.id }) {
+            globalUsers[idx].avatarData = avatarData
+            globalUsers[idx].avatarName = currentUser.avatarName
+        }
+    }
+    
+    func updateAvatarVideoBackground(_ data: Data?) {
+        currentUser.avatarVideoBackgroundData = data
         if let account = currentAccount {
             updateAccountData(account.id)
         }
@@ -331,5 +508,14 @@ class AppState: ObservableObject {
     
     func leaveChat(chatId: UUID) {
         chats.removeAll { $0.id == chatId }
+    }
+    
+    // MARK: - Active Sessions
+    func terminateSession(_ sessionId: UUID) {
+        activeSessions.removeAll { $0.id == sessionId }
+    }
+    
+    func terminateAllOtherSessions() {
+        activeSessions.removeAll { !$0.isCurrent }
     }
 }

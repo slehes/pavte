@@ -34,13 +34,33 @@ struct ChatDetailView: View {
     
     // Group management
     @State private var showGroupManagement = false
+    
+    // Message actions
+    @State private var selectedMessage: Message?
+    @State private var showDeleteConfirmation = false
+    @State private var deleteForEveryone = false
+    @State private var showEditMessage = false
+    @State private var editText = ""
+    
+    // Pinned messages viewer
+    @State private var showPinnedMessages = false
 
     var currentChat: Chat {
         appState.chats.first { $0.id == chat.id } ?? chat
     }
+    
+    /// Messages visible to the user (not deleted for them or everyone)
+    var visibleMessages: [Message] {
+        currentChat.messages.filter { !$0.isDeletedForMe && !$0.isDeletedForEveryone }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
+            // Pinned message banner
+            if let pinnedMsg = currentChat.pinnedMessages.last {
+                PinnedMessageBanner(message: pinnedMsg, chatId: chat.id)
+            }
+            
             messagesList
             inputBar
         }
@@ -61,6 +81,35 @@ struct ChatDetailView: View {
         .sheet(isPresented: $showGroupManagement) {
             GroupManagementView(chat: chat)
         }
+        .sheet(isPresented: $showPinnedMessages) {
+            PinnedMessagesView(chatId: chat.id)
+        }
+        // Delete confirmation
+        .alert("Удалить сообщение", isPresented: $showDeleteConfirmation) {
+            Button("Удалить у меня", role: .destructive) {
+                if let msg = selectedMessage {
+                    appState.deleteMessageForMe(chatId: chat.id, messageId: msg.id)
+                }
+            }
+            Button("Удалить у всех", role: .destructive) {
+                if let msg = selectedMessage {
+                    appState.deleteMessageForEveryone(chatId: chat.id, messageId: msg.id)
+                }
+            }
+            Button("Отмена", role: .cancel) { }
+        } message: {
+            Text("Выберите способ удаления. Удаление у всех — анонимно, собеседник не увидит что сообщение было удалено.")
+        }
+        // Edit message
+        .alert("Редактировать сообщение", isPresented: $showEditMessage) {
+            TextField("Новое сообщение", text: $editText)
+            Button("Сохранить") {
+                if let msg = selectedMessage, !editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    appState.editMessage(chatId: chat.id, messageId: msg.id, newText: editText)
+                }
+            }
+            Button("Отмена", role: .cancel) { }
+        }
     }
 
     // MARK: - Subviews
@@ -69,32 +118,80 @@ struct ChatDetailView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    ForEach(currentChat.messages) { message in
+                    ForEach(visibleMessages) { message in
                         MessageBubbleView(message: message, isOutgoing: message.senderId == appState.currentUser.id)
                             .id(message.id)
                             .onTapGesture { handleMediaTap(message) }
+                            .onLongPressGesture {
+                                selectedMessage = message
+                            }
+                            .contextMenu { messageContextMenu(message) }
                     }
                 }
                 .padding()
             }
             .background(themeManager.wallpaperView())
             .onAppear {
-                if let lastMessage = currentChat.messages.last {
+                if let lastMessage = visibleMessages.last {
                     proxy.scrollTo(lastMessage.id, anchor: .bottom)
                 }
                 appState.markAsRead(chatId: chat.id)
             }
-            .onChange(of: currentChat.messages.count) { _, _ in
-                if let lastMessage = currentChat.messages.last {
+            .onChange(of: visibleMessages.count) { _, _ in
+                if let lastMessage = visibleMessages.last {
                     withAnimation { proxy.scrollTo(lastMessage.id, anchor: .bottom) }
                 }
             }
         }
     }
+    
+    // MARK: - Context Menu for Messages
+    @ViewBuilder
+    private func messageContextMenu(_ message: Message) -> some View {
+        // Reply
+        Button {
+            // Reply placeholder
+        } label: {
+            Label("Ответить", systemImage: "arrowshape.turn.up.left")
+        }
+        
+        // Edit (only own messages)
+        if message.senderId == appState.currentUser.id {
+            Button {
+                selectedMessage = message
+                editText = message.text
+                showEditMessage = true
+            } label: {
+                Label("Редактировать", systemImage: "pencil")
+            }
+        }
+        
+        // Pin / Unpin
+        Button {
+            appState.togglePinMessage(chatId: chat.id, messageId: message.id)
+        } label: {
+            Label(message.isPinned ? "Открепить" : "Закрепить", systemImage: message.isPinned ? "pin.slash" : "pin")
+        }
+        
+        // Copy
+        Button {
+            UIPasteboard.general.string = message.text
+        } label: {
+            Label("Копировать", systemImage: "doc.on.doc")
+        }
+        
+        // Delete
+        Button(role: .destructive) {
+            selectedMessage = message
+            showDeleteConfirmation = true
+        } label: {
+            Label("Удалить", systemImage: "trash")
+        }
+    }
 
     private var inputBar: some View {
         VStack(spacing: 0) {
-            // Attachment popup menu — appears just above the input bar
+            // Attachment popup menu
             if showAttachmentPopup {
                 AttachmentPopupView(
                     onSelectPhoto: {
@@ -166,6 +263,16 @@ struct ChatDetailView: View {
                 }
             }
         }
+        ToolbarItem(placement: .topBarTrailing) {
+            if !currentChat.pinnedMessages.isEmpty {
+                Button {
+                    showPinnedMessages = true
+                } label: {
+                    Image(systemName: "pin.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -193,7 +300,6 @@ struct ChatDetailView: View {
                     let mediaType: Message.MediaType = isVideo ? .video : .image
                     let text = isVideo ? "Видео" : "Фото"
                     appState.sendMessage(to: chat.id, text: text, mediaType: mediaType, mediaData: data)
-                    // NO auto-reply — messages are truly sent
                 }
             }
             selectedPhotoItems = []
@@ -204,7 +310,6 @@ struct ChatDetailView: View {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         appState.sendMessage(to: chat.id, text: messageText)
         messageText = ""
-        // NO auto-reply — messages are truly sent
     }
 
     // MARK: - Voice Recording
@@ -232,7 +337,6 @@ struct ChatDetailView: View {
         let text = String(format: "Голосовое %.0fс", duration)
         appState.sendMessage(to: chat.id, text: text, mediaType: .voice)
         recordingDuration = 0
-        // NO auto-reply — messages are truly sent
     }
 
     private func startCall(type: CallRecord.CallType) {
@@ -240,7 +344,82 @@ struct ChatDetailView: View {
     }
 }
 
-// MARK: - Attachment Popup View (appears near the paperclip button)
+// MARK: - Pinned Message Banner
+struct PinnedMessageBanner: View {
+    let message: Message
+    let chatId: UUID
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "pin.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+            Text(message.text)
+                .font(.caption)
+                .lineLimit(1)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Color(.systemGray6))
+    }
+}
+
+// MARK: - Pinned Messages View
+struct PinnedMessagesView: View {
+    let chatId: UUID
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @Environment(\.dismiss) var dismiss
+    
+    var currentChat: Chat {
+        appState.chats.first { $0.id == chatId } ?? Chat(id: chatId, participant: User(id: UUID(), username: "", displayName: "", bio: "", avatarName: "person.circle.fill", isOnline: false, lastSeen: Date(), phoneNumber: ""), messages: [], isPinned: false, isMuted: false, unreadCount: 0)
+    }
+    
+    var pinnedMessages: [Message] {
+        currentChat.pinnedMessages
+    }
+    
+    var body: some View {
+        NavigationStack {
+            List(pinnedMessages) { message in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(message.text)
+                        .font(.body)
+                    HStack {
+                        Text(message.formattedTime)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if message.isEdited {
+                            Text("изменено")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .swipeActions {
+                    Button {
+                        appState.togglePinMessage(chatId: chatId, messageId: message.id)
+                    } label: {
+                        Label("Открепить", systemImage: "pin.slash")
+                    }
+                    .tint(.orange)
+                }
+            }
+            .navigationTitle("Закреплённые")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Готово") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Attachment Popup View
 struct AttachmentPopupView: View {
     let onSelectPhoto: () -> Void
     let onSelectFile: () -> Void
@@ -250,7 +429,6 @@ struct AttachmentPopupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Dark rounded popup menu
             VStack(spacing: 0) {
                 Button {
                     onSelectPhoto()
@@ -341,21 +519,30 @@ struct MessageBubbleView: View {
             if isOutgoing { Spacer(minLength: 60) }
 
             VStack(alignment: isOutgoing ? .trailing : .leading, spacing: 0) {
-                // Media fills full width — no padding around it
+                // Media fills full width
                 if hasVisualMedia {
                     if let mediaType = message.mediaType, let mediaData = message.mediaData {
                         FullWidthMediaPreview(message: message, mediaType: mediaType, mediaData: mediaData, isOutgoing: isOutgoing)
                     }
-                    // Time overlay at the bottom of media
                     HStack(spacing: 4) {
                         Spacer()
                         Text(message.formattedTime)
                             .font(.caption2)
                             .foregroundStyle(.white)
+                        if message.isEdited {
+                            Text("изменено")
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
                         if isOutgoing && themeManager.showReadReceipts {
                             Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
                                 .font(.caption2)
                                 .foregroundStyle(.white)
+                        }
+                        if message.isPinned {
+                            Image(systemName: "pin.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
                         }
                     }
                     .padding(.horizontal, 8)
@@ -366,7 +553,7 @@ struct MessageBubbleView: View {
                     .padding(.bottom, 4)
                     .offset(y: -8)
                 } else {
-                    // Non-visual media (voice, document) or text-only
+                    // Non-visual media or text-only
                     if let mediaType = message.mediaType {
                         if let mediaData = message.mediaData {
                             RealMediaPreviewView(message: message, mediaType: mediaType, mediaData: mediaData)
@@ -385,6 +572,16 @@ struct MessageBubbleView: View {
                         Text(message.formattedTime)
                             .font(.caption2)
                             .foregroundStyle(isOutgoing ? .white.opacity(0.7) : .secondary)
+                        if message.isEdited {
+                            Text("изменено")
+                                .font(.caption2)
+                                .foregroundStyle(isOutgoing ? .white.opacity(0.7) : .secondary)
+                        }
+                        if message.isPinned {
+                            Image(systemName: "pin.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
                         if isOutgoing && themeManager.showReadReceipts {
                             Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
                                 .font(.caption2)
@@ -398,7 +595,6 @@ struct MessageBubbleView: View {
             .background(hasVisualMedia ? Color.clear : (isOutgoing ? themeManager.outgoingBubbleColor : themeManager.incomingBubbleColor))
             .clipShape(RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius))
             .overlay(
-                // Border for media-only bubbles
                 hasVisualMedia ? RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius)
                     .stroke(Color(.systemGray4), lineWidth: 0.5) : nil
             )
@@ -408,7 +604,7 @@ struct MessageBubbleView: View {
     }
 }
 
-// MARK: - Full-Width Media Preview (fills entire bubble)
+// MARK: - Full-Width Media Preview
 struct FullWidthMediaPreview: View {
     let message: Message
     let mediaType: Message.MediaType
@@ -772,7 +968,7 @@ struct VideoPlayerView: View {
     }
 }
 
-// MARK: - Message Input Bar (Redesigned: +, text, mic, phone, video)
+// MARK: - Message Input Bar
 struct MessageInputBar: View {
     @Binding var text: String
     @Binding var isRecording: Bool
@@ -790,7 +986,7 @@ struct MessageInputBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // + button (attachment)
+            // + button
             Button(action: onAttachment) {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
@@ -813,7 +1009,7 @@ struct MessageInputBar: View {
                     .lineLimit(1...5)
             }
 
-            // Voice message / Send button
+            // Voice / Send
             Button {
                 if isRecording || text.isEmpty { onVoiceRecordToggle() } else { onSend() }
             } label: {
@@ -822,7 +1018,7 @@ struct MessageInputBar: View {
                     .foregroundStyle(isRecording ? .red : themeManager.accentColor)
             }
 
-            // Phone call button
+            // Voice call
             Button(action: onVoiceCall) {
                 Image(systemName: "phone.fill")
                     .font(.body)
@@ -832,7 +1028,7 @@ struct MessageInputBar: View {
                     .clipShape(Circle())
             }
 
-            // Video call button
+            // Video call
             Button(action: onVideoCall) {
                 Image(systemName: "video.fill")
                     .font(.body)

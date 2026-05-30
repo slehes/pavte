@@ -11,6 +11,8 @@ struct User: Identifiable, Codable, Equatable {
     var isOnline: Bool
     var lastSeen: Date
     var phoneNumber: String
+    // Video background around avatar
+    var avatarVideoBackgroundData: Data?
     
     static let currentUser = User(
         id: UUID(),
@@ -29,12 +31,20 @@ struct User: Identifiable, Codable, Equatable {
 struct Message: Identifiable, Codable, Equatable {
     let id: UUID
     let senderId: UUID
-    let text: String
+    var text: String
     let timestamp: Date
     var isRead: Bool
     var mediaType: MediaType?
     var mediaURL: String?
     var mediaData: Data?
+    // Editing
+    var isEdited: Bool
+    var originalText: String?
+    // Deletion
+    var isDeletedForMe: Bool          // deleted only for current user
+    var isDeletedForEveryone: Bool    // deleted for all — anonymous, message disappears
+    // Pinning
+    var isPinned: Bool
     
     enum MediaType: String, Codable {
         case image
@@ -47,6 +57,23 @@ struct Message: Identifiable, Codable, Equatable {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: timestamp)
+    }
+    
+    // Convenience init for new messages
+    init(id: UUID = UUID(), senderId: UUID, text: String, timestamp: Date = Date(), isRead: Bool = false, mediaType: MediaType? = nil, mediaURL: String? = nil, mediaData: Data? = nil, isEdited: Bool = false, originalText: String? = nil, isDeletedForMe: Bool = false, isDeletedForEveryone: Bool = false, isPinned: Bool = false) {
+        self.id = id
+        self.senderId = senderId
+        self.text = text
+        self.timestamp = timestamp
+        self.isRead = isRead
+        self.mediaType = mediaType
+        self.mediaURL = mediaURL
+        self.mediaData = mediaData
+        self.isEdited = isEdited
+        self.originalText = originalText
+        self.isDeletedForMe = isDeletedForMe
+        self.isDeletedForEveryone = isDeletedForEveryone
+        self.isPinned = isPinned
     }
 }
 
@@ -130,11 +157,12 @@ struct Chat: Identifiable, Equatable {
     }
     
     var lastMessage: Message? {
-        messages.last
+        messages.last { !$0.isDeletedForMe && !$0.isDeletedForEveryone }
     }
     
     var lastMessagePreview: String {
         guard let last = lastMessage else { return "" }
+        if last.isDeletedForMe || last.isDeletedForEveryone { return "" }
         if last.mediaType != nil {
             switch last.mediaType {
             case .image: return "📷 Фото"
@@ -145,6 +173,11 @@ struct Chat: Identifiable, Equatable {
             }
         }
         return last.text
+    }
+    
+    // Pinned messages
+    var pinnedMessages: [Message] {
+        messages.filter { $0.isPinned && !$0.isDeletedForMe && !$0.isDeletedForEveryone }
     }
     
     // Default init for personal chats
@@ -314,3 +347,61 @@ enum ThemeColor: String, CaseIterable, Codable {
         }
     }
 }
+
+// MARK: - Passcode / 2FA / Active Sessions Models
+
+struct ActiveSession: Identifiable, Codable, Equatable {
+    let id: UUID
+    var deviceName: String
+    var deviceModel: String
+    var platform: String
+    var appVersion: String
+    var lastActiveDate: Date
+    var ipAddress: String
+    var location: String
+    var isCurrent: Bool
+    
+    static func currentSession(appVersion: String) -> ActiveSession {
+        ActiveSession(
+            id: UUID(),
+            deviceName: UIDevice.current.name,
+            deviceModel: UIDevice.current.model,
+            platform: "iOS \(UIDevice.current.systemVersion)",
+            appVersion: appVersion,
+            lastActiveDate: Date(),
+            ipAddress: "192.168.1.\(Int.random(in: 1...254))",
+            location: "Москва, Россия",
+            isCurrent: true
+        )
+    }
+    
+    static func mockSessions(appVersion: String) -> [ActiveSession] {
+        [
+            currentSession(appVersion: appVersion),
+            ActiveSession(
+                id: UUID(),
+                deviceName: "iPhone",
+                deviceModel: "iPhone 15 Pro",
+                platform: "iOS 18.0",
+                appVersion: appVersion,
+                lastActiveDate: Date().addingTimeInterval(-3600),
+                ipAddress: "10.0.0.\(Int.random(in: 1...254))",
+                location: "Санкт-Петербург, Россия",
+                isCurrent: false
+            ),
+            ActiveSession(
+                id: UUID(),
+                deviceName: "iPad",
+                deviceModel: "iPad Air",
+                platform: "iPadOS 18.0",
+                appVersion: appVersion,
+                lastActiveDate: Date().addingTimeInterval(-86400),
+                ipAddress: "172.16.0.\(Int.random(in: 1...254))",
+                location: "Казань, Россия",
+                isCurrent: false
+            )
+        ]
+    }
+}
+
+import UIKit
