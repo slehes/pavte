@@ -7,12 +7,12 @@ struct User: Identifiable, Codable, Equatable {
     var displayName: String
     var bio: String
     var avatarName: String
-    var avatarData: Data?
+    var avatarData: Data? = nil
     var isOnline: Bool
     var lastSeen: Date
     var phoneNumber: String
     // Video background around avatar
-    var avatarVideoBackgroundData: Data?
+    var avatarVideoBackgroundData: Data? = nil
     
     static let currentUser = User(
         id: UUID(),

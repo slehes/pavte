@@ -2,7 +2,6 @@ import SwiftUI
 import PhotosUI
 import AVKit
 import AVFoundation
-import UniformTypeIdentifiers
 
 // MARK: - ChatDetailView
 struct ChatDetailView: View {
@@ -309,8 +308,7 @@ struct ChatDetailView: View {
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self) {
                     let identifier = item.itemIdentifier ?? ""
-                    let isVideo = identifier.hasPrefix("Video") ||
-                        (item.supportedContentTypes.first?.identifier.contains("video") ?? false)
+                    let isVideo = identifier.hasPrefix("Video")
                     let mediaType: Message.MediaType = isVideo ? .video : .image
                     let text = isVideo ? "Видео" : "Фото"
                     appState.sendMessage(to: chat.id, text: text, mediaType: mediaType, mediaData: data)
