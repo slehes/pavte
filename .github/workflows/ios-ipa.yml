@@ -16,14 +16,12 @@ jobs:
 
       - name: Select Xcode
         run: |
-          # Try Xcode 16.x first, fall back to latest
-          for xc in /Applications/Xcode_16.2.app /Applications/Xcode_16.1.app /Applications/Xcode_16.0.app; do
-            if [ -d "$xc" ]; then
-              sudo xcode-select -s "$xc/Contents/Developer"
-              echo "Selected $xc"
-              break
-            fi
-          done
+          # Use the latest available Xcode
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XCODE_PATH" ]; then
+            sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+            echo "Selected: $XCODE_PATH"
+          fi
           echo "=== Xcode version ==="
           xcodebuild -version
           echo "=== Available iOS SDKs ==="
@@ -32,17 +30,13 @@ jobs:
       - name: Install XcodeGen
         run: |
           brew install xcodegen 2>/dev/null || true
-          xcodegen --version || echo "XcodeGen not available"
+          xcodegen --version
 
       - name: Generate Xcode project with XcodeGen
         working-directory: ios-pavte
         run: |
-          if [ -f "project.yml" ]; then
-            xcodegen generate
-            echo "Project generated with XcodeGen"
-          else
-            echo "project.yml not found, using existing project.pbxproj"
-          fi
+          xcodegen generate
+          echo "Project generated with XcodeGen"
 
       - name: Build archive
         working-directory: ios-pavte
@@ -65,7 +59,7 @@ jobs:
         working-directory: ios-pavte
         run: |
           echo "=== BUILD FAILED ==="
-          grep -i "error:" build.log || true
+          grep -i "error:" build.log | head -30 || true
           echo "=== Last 80 lines ==="
           tail -80 build.log || true
 
