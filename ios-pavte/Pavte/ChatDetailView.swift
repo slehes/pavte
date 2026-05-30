@@ -145,7 +145,8 @@ struct ChatDetailView: View {
         Task {
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self) {
-                    let isVideo = item.itemIdentifier.hasPrefix("Video") ||
+                    let identifier = item.itemIdentifier ?? ""
+                    let isVideo = identifier.hasPrefix("Video") ||
                         (item.supportedContentTypes.first?.identifier.contains("video") ?? false)
                     let mediaType: Message.MediaType = isVideo ? .video : .image
                     let text = isVideo ? "Видео" : "Фото"
