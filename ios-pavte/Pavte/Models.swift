@@ -379,6 +379,7 @@ struct ActiveSession: Identifiable, Codable, Equatable {
         )
     }
     
+    @MainActor
     static func mockSessions(appVersion: String) -> [ActiveSession] {
         [
             currentSession(appVersion: appVersion),

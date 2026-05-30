@@ -53,6 +53,7 @@ struct Account: Identifiable, Codable, Equatable {
     ]
 }
 
+@MainActor
 class AppState: ObservableObject {
     @Published var currentUser: User
     @Published var contacts: [User]

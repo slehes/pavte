@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 class ThemeManager: ObservableObject {
     @AppStorage("isDarkMode") var isDarkMode: Bool = false
     @AppStorage("themeColorRaw") private var themeColorRaw: String = ThemeColor.blue.rawValue
