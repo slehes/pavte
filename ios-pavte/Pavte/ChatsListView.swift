@@ -78,9 +78,9 @@ struct ChatRowView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Avatar — supports custom image
+            // Avatar — supports custom image, groups, channels
             ZStack(alignment: .bottomTrailing) {
-                if let avatarData = chat.participant.avatarData,
+                if let avatarData = chat.displayAvatarData,
                    let uiImage = UIImage(data: avatarData) {
                     Image(uiImage: uiImage)
                         .resizable()
@@ -88,12 +88,12 @@ struct ChatRowView: View {
                         .frame(width: 50, height: 50)
                         .clipShape(Circle())
                 } else {
-                    Image(systemName: chat.participant.avatarName)
+                    Image(systemName: chat.displayAvatar)
                         .font(.system(size: 50))
                         .foregroundStyle(themeManager.accentColor)
                 }
                 
-                if themeManager.showOnlineStatus && chat.participant.isOnline {
+                if themeManager.showOnlineStatus && chat.participant.isOnline && chat.chatType == .personal {
                     Circle()
                         .fill(.green)
                         .frame(width: 14, height: 14)
@@ -102,11 +102,26 @@ struct ChatRowView: View {
                                 .stroke(Color(.systemBackground), lineWidth: 2)
                         )
                 }
+                
+                // Group/Channel badge
+                if chat.chatType == .group {
+                    Image(systemName: "person.3.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.white)
+                        .padding(3)
+                        .background(Circle().fill(themeManager.accentColor))
+                } else if chat.chatType == .channel {
+                    Image(systemName: "megaphone.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.white)
+                        .padding(3)
+                        .background(Circle().fill(themeManager.accentColor))
+                }
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(chat.participant.displayName)
+                    Text(chat.displayName)
                         .font(.headline)
                     
                     if chat.isPinned {

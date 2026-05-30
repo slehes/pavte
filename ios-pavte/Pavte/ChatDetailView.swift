@@ -31,6 +31,9 @@ struct ChatDetailView: View {
 
     // Full-screen media viewer
     @State private var selectedMessageForViewer: Message?
+    
+    // Group management
+    @State private var showGroupManagement = false
 
     var currentChat: Chat {
         appState.chats.first { $0.id == chat.id } ?? chat
@@ -46,7 +49,7 @@ struct ChatDetailView: View {
             messagesList
             inputBar
         }
-        .navigationTitle(chat.participant.displayName)
+        .navigationTitle(chat.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
@@ -64,6 +67,9 @@ struct ChatDetailView: View {
         }
         .fullScreenCover(item: $selectedMessageForViewer) { message in
             MediaFullViewerView(message: message, dismissAction: { selectedMessageForViewer = nil })
+        }
+        .sheet(isPresented: $showGroupManagement) {
+            GroupManagementView(chat: chat)
         }
     }
 
@@ -141,13 +147,27 @@ struct ChatDetailView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            Button { showUserProfile = true } label: {
+            Button {
+                if currentChat.chatType != .personal {
+                    showGroupManagement = true
+                } else {
+                    showUserProfile = true
+                }
+            } label: {
                 VStack(spacing: 0) {
-                    Text(chat.participant.displayName)
+                    Text(chat.displayName)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                    if themeManager.showOnlineStatus {
+                    if chat.chatType == .personal && themeManager.showOnlineStatus {
                         Text(chat.participant.isOnline ? "в сети" : lastSeenText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if chat.chatType == .group {
+                        Text("\(currentChat.members.count) участников")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if chat.chatType == .channel {
+                        Text("\(currentChat.members.count) подписчиков")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -349,42 +369,156 @@ struct MessageBubbleView: View {
     let isOutgoing: Bool
     @EnvironmentObject var themeManager: ThemeManager
 
+    /// Whether this message has visual media (image or video)
+    private var hasVisualMedia: Bool {
+        if let mt = message.mediaType {
+            return (mt == .image || mt == .video) && message.mediaData != nil
+        }
+        return false
+    }
+
     var body: some View {
         HStack {
             if isOutgoing { Spacer(minLength: 60) }
 
-            VStack(alignment: isOutgoing ? .trailing : .leading, spacing: 4) {
-                if let mediaType = message.mediaType {
-                    if let mediaData = message.mediaData {
-                        RealMediaPreviewView(message: message, mediaType: mediaType, mediaData: mediaData)
-                    } else {
-                        PlaceholderMediaPreviewView(mediaType: mediaType, text: message.text)
+            VStack(alignment: isOutgoing ? .trailing : .leading, spacing: 0) {
+                // Media fills full width — no padding around it
+                if hasVisualMedia {
+                    if let mediaType = message.mediaType, let mediaData = message.mediaData {
+                        FullWidthMediaPreview(message: message, mediaType: mediaType, mediaData: mediaData, isOutgoing: isOutgoing)
                     }
-                }
+                    // Time overlay at the bottom of media
+                    HStack(spacing: 4) {
+                        Spacer()
+                        Text(message.formattedTime)
+                            .font(.caption2)
+                            .foregroundStyle(.white)
+                        if isOutgoing && themeManager.showReadReceipts {
+                            Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.black.opacity(0.4))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.trailing, 4)
+                    .padding(.bottom, 4)
+                    .offset(y: -8)
+                } else {
+                    // Non-visual media (voice, document) or text-only
+                    if let mediaType = message.mediaType {
+                        if let mediaData = message.mediaData {
+                            RealMediaPreviewView(message: message, mediaType: mediaType, mediaData: mediaData)
+                        } else {
+                            PlaceholderMediaPreviewView(mediaType: mediaType, text: message.text)
+                        }
+                    }
 
-                if !message.text.isEmpty && message.mediaType == nil {
-                    Text(message.text)
-                        .font(.system(size: themeManager.fontSize.size))
-                        .foregroundStyle(isOutgoing ? .white : .primary)
-                }
+                    if !message.text.isEmpty && message.mediaType == nil {
+                        Text(message.text)
+                            .font(.system(size: themeManager.fontSize.size))
+                            .foregroundStyle(isOutgoing ? .white : .primary)
+                    }
 
-                HStack(spacing: 4) {
-                    Text(message.formattedTime)
-                        .font(.caption2)
-                        .foregroundStyle(isOutgoing ? .white.opacity(0.7) : .secondary)
-                    if isOutgoing && themeManager.showReadReceipts {
-                        Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
+                    HStack(spacing: 4) {
+                        Text(message.formattedTime)
                             .font(.caption2)
                             .foregroundStyle(isOutgoing ? .white.opacity(0.7) : .secondary)
+                        if isOutgoing && themeManager.showReadReceipts {
+                            Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
+                                .font(.caption2)
+                                .foregroundStyle(isOutgoing ? .white.opacity(0.7) : .secondary)
+                        }
                     }
+                    .padding(.top, 4)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(isOutgoing ? themeManager.outgoingBubbleColor : themeManager.incomingBubbleColor)
+            .padding(hasVisualMedia ? .zero : EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            .background(hasVisualMedia ? Color.clear : (isOutgoing ? themeManager.outgoingBubbleColor : themeManager.incomingBubbleColor))
             .clipShape(RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius))
+            .overlay(
+                // Border for media-only bubbles
+                hasVisualMedia ? RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius)
+                    .stroke(Color(.systemGray4), lineWidth: 0.5) : nil
+            )
 
             if !isOutgoing { Spacer(minLength: 60) }
+        }
+    }
+}
+
+// MARK: - Full-Width Media Preview (fills entire bubble)
+struct FullWidthMediaPreview: View {
+    let message: Message
+    let mediaType: Message.MediaType
+    let mediaData: Data
+    let isOutgoing: Bool
+    @EnvironmentObject var themeManager: ThemeManager
+
+    var body: some View {
+        Group {
+            switch mediaType {
+            case .image:
+                if let uiImage = UIImage(data: mediaData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: themeManager.bubbleCornerRadius))
+                } else {
+                    PlaceholderMediaPreviewView(mediaType: .image, text: "Фото")
+                }
+            case .video:
+                FullWidthVideoThumbnail(videoData: mediaData, cornerRadius: themeManager.bubbleCornerRadius)
+            case .voice, .document:
+                EmptyView()
+            }
+        }
+    }
+}
+
+// MARK: - Full-Width Video Thumbnail
+struct FullWidthVideoThumbnail: View {
+    let videoData: Data
+    let cornerRadius: CGFloat
+    @State private var thumbnailImage: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let thumb = thumbnailImage {
+                Image(uiImage: thumb)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .overlay(RoundedRectangle(cornerRadius: cornerRadius).fill(Color.black.opacity(0.15)))
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 200)
+            }
+            Circle().fill(.black.opacity(0.5)).frame(width: 54, height: 54)
+            Image(systemName: "play.fill").font(.title).foregroundStyle(.white)
+        }
+        .onAppear { generateThumbnail() }
+    }
+
+    private func generateThumbnail() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("video_\(UUID().uuidString).mp4")
+            do {
+                try videoData.write(to: tempURL)
+                let asset = AVAsset(url: tempURL)
+                let generator = AVAssetImageGenerator(asset: asset)
+                generator.appliesPreferredTrackTransform = true
+                if let cgImage = try? generator.copyCGImage(at: .zero, actualTime: nil) {
+                    DispatchQueue.main.async { thumbnailImage = UIImage(cgImage: cgImage) }
+                }
+                try? FileManager.default.removeItem(at: tempURL)
+            } catch { }
         }
     }
 }

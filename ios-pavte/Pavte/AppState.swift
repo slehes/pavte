@@ -247,4 +247,19 @@ class AppState: ObservableObject {
         chats.append(newChat)
         return newChat
     }
+    
+    // MARK: - Group/Channel Management
+    func updateChatPermission(chatId: UUID, allowReactions: Bool? = nil, allowMembersToInvite: Bool? = nil, allowMembersToEditInfo: Bool? = nil, allowMembersToPinMessages: Bool? = nil, historyVisibleToNewMembers: Bool? = nil, slowMode: Bool? = nil) {
+        guard let idx = chats.firstIndex(where: { $0.id == chatId }) else { return }
+        if let v = allowReactions { chats[idx].allowReactions = v }
+        if let v = allowMembersToInvite { chats[idx].allowMembersToInvite = v }
+        if let v = allowMembersToEditInfo { chats[idx].allowMembersToEditInfo = v }
+        if let v = allowMembersToPinMessages { chats[idx].allowMembersToPinMessages = v }
+        if let v = historyVisibleToNewMembers { chats[idx].historyVisibleToNewMembers = v }
+        if let v = slowMode { chats[idx].slowMode = v }
+    }
+    
+    func leaveChat(chatId: UUID) {
+        chats.removeAll { $0.id == chatId }
+    }
 }
