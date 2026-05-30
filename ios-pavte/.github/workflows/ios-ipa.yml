@@ -1,0 +1,47 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project Pavte.xcodeproj -scheme Pavte
+
+      - name: Build archive
+        run: |
+          xcodebuild archive \
+            -project Pavte.xcodeproj \
+            -scheme Pavte \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Pavte.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned IPA artifact
+        run: |
+          mkdir -p build/Payload
+          cp -R build/Pavte.xcarchive/Products/Applications/Pavte.app build/Payload/
+          cd build
+          zip -qry Pavte-unsigned.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pavte-unsigned-ipa
+          path: build/Pavte-unsigned.ipa
+          retention-days: 14
