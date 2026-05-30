@@ -421,5 +421,3 @@ struct NotificationBanner: Identifiable, Equatable {
         lhs.id == rhs.id
     }
 }
-
-import UIKit
