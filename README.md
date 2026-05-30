@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Mobile%20Phone.png" alt="logo" width="80" height="80" />
+<img src="assets/logo.png" alt="Pavte Logo" width="120" height="120" />
 
 # Pavte
 

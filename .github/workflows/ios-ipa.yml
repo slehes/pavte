@@ -14,22 +14,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: List available Xcode versions
-        run: ls /Applications/ | grep Xcode || true
-
-      - name: Select latest available Xcode
+      - name: Select Xcode 26 for iOS 26
         run: |
-          # Try to find the latest Xcode version available on the runner
-          for xcode in Xcode_26 Xcode_16.4 Xcode_16.3 Xcode_16.2 Xcode_16.1 Xcode_16.0; do
-            if [ -d "/Applications/${xcode}.app" ]; then
-              sudo xcode-select -s "/Applications/${xcode}.app"
-              echo "Selected ${xcode}"
-              break
+          # Find and select the latest Xcode 26.x version available
+          XCODE26=$(ls -d /Applications/Xcode_26.*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XCODE26" ]; then
+            sudo xcode-select -s "$XCODE26"
+            echo "Selected $XCODE26"
+          else
+            echo "WARNING: Xcode 26 not found, falling back to latest available"
+            XCODE_LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+            if [ -n "$XCODE_LATEST" ]; then
+              sudo xcode-select -s "$XCODE_LATEST"
+              echo "Selected $XCODE_LATEST"
             fi
-          done
-          echo "Xcode version:"
+          fi
+          echo "=== Xcode version ==="
           xcodebuild -version
-          echo "Available SDKs:"
+          echo "=== Available iOS SDKs ==="
           xcodebuild -showsdks | grep -i ios || true
 
       - name: Install XcodeGen
@@ -40,11 +42,11 @@ jobs:
       - name: Generate Xcode project with XcodeGen
         working-directory: ios-pavte
         run: |
-          if command -v xcodegen &> /dev/null; then
+          if [ -f "project.yml" ]; then
             xcodegen generate
             echo "Project generated with XcodeGen"
           else
-            echo "XcodeGen not available, using existing project.pbxproj"
+            echo "project.yml not found, using existing project.pbxproj"
           fi
 
       - name: Build archive
@@ -63,15 +65,14 @@ jobs:
             COMPILER_INDEX_STORE_ENABLE=NO \
             2>&1 | tee build.log | tail -50
 
-      - name: Show build log on failure
+      - name: Show build errors on failure
         if: failure()
         working-directory: ios-pavte
         run: |
           echo "=== BUILD FAILED ==="
-          tail -100 build.log || true
-          echo "=== Checking for issues ==="
           grep -i "error:" build.log || true
-          grep -i "warning:" build.log || true
+          echo "=== Last 80 lines ==="
+          tail -80 build.log || true
 
       - name: Package unsigned IPA artifact
         working-directory: ios-pavte
@@ -82,9 +83,10 @@ jobs:
             cd build
             zip -qry Pavte-unsigned.ipa Payload
             echo "IPA created successfully"
+            ls -lh Pavte-unsigned.ipa
           else
             echo "ERROR: Pavte.app not found in archive"
-            find build/Pavte.xcarchive -type f 2>/dev/null || true
+            find build/Pavte.xcarchive -type f 2>/dev/null | head -30 || true
             exit 1
           fi
 
